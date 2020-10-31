@@ -31,7 +31,7 @@ Core programs for map construction and query search need to be compiled using g+
     g++  main_search_v17.4.cpp -std=c++11 -fopenmp -O3 -o main_search
 ```    
 
-Using CONSULT
+Usage
 ------------
 
 <!--Change to the CONSULT working directory and run the scripts below. -->
