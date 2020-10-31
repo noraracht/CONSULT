@@ -13,7 +13,7 @@ Summary data tables and scripts that we used during testing are available at htt
 System Requirements
 ------------
 
-#### Disk space
+### Disk space
 Construction of CONSULT database requires approximately 120 GB of disk space. Exact footprint depends on a number of *k*-mers in a reference set. For instance, the size of the databases that we built during testing with default settings varied between 107 GB to 120 GB. In GTDB database 62 GB of disk space was used to store encodings, 56 GB was taken by lookup table, 2 GB was utilized by tag array and metadata. 
 
  #### Memory
@@ -35,7 +35,7 @@ Using CONSULT
 ------------
 
 <!--Change to the CONSULT working directory and run the scripts below. -->
- #### Database construction
+ ### Database construction
 To construct standard reference database, you can use the following command:
 ```
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
