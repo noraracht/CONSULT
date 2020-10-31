@@ -122,7 +122,7 @@ g++ minimization_v3.0.cpp -std=c++11 -o main_minimization
 ./main_minimization -i 35bp_kmer_lst.fa -o 32bp_minzer_lst.fa
 ```
 
-**4. Extraction of canonical 32 bp *k*-mers**. 
+**4. Extraction of canonical 32 bp *k*-mers** allows to further reduce *k*-mer count and remove duplicate sequences. 
 - To compute *k*-mer profile:
 ```
 jellyfish count -m 32 -s 100M -t 24 -C 32bp_minzer_lst.fa -o counts.jf
