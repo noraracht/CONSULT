@@ -77,14 +77,14 @@ TACTGCTGATATTCAGCTCACACC
 ```
 
 ###### Output: 
-CONSULT is designed for filtering out contaminants from sequencing reads so its output is a FASTQ file that contains **UNCLASSIFIED** (clean) reads and their corresponding sequence IDs, obtained from the input FASTQ header. Files are stored into working directory where software is ran. Every sample retains its original file name prefixed with *"ucseq_"*. 
+CONSULT is designed for filtering out contaminants from sequencing reads so its output is a FASTQ file that contains **UNCLASSIFIED** (clean) reads and their corresponding sequence IDs, obtained from the input FASTQ headers. Files are stored into working directory where software is ran. Every sample retains its original file name prefixed with *"ucseq_"*. 
 <!--Log output is sent to standard output by default. -->
 
 **CONSULT program arguments are:**
 
 - -i - name of the reference database
 
-- -c - the highest number of *k*-mers that is required to still keep sequencing read unclassified. For instance, if at least one *k*-mer match is enough to classify a read, "c" should be set to 0.  If at least two *k*-mer matches are required to call entire read a match, "c" should be set to 1. By default the value of "c" in 0.
+- -c - the highest number of *k*-mers that is required to still keep sequencing read unclassified. For instance, if at least one *k*-mer match is enough to classify a read (default setting mentioned in a paper), "c" should be set to 0 in a software.  If at least two *k*-mer matches are required to call entire read a match, "c" should be set to 1. By default the value of "c" is 0.
 
 - -t - number of threads
 
@@ -93,15 +93,44 @@ CONSULT is designed for filtering out contaminants from sequencing reads so its 
 
 Data Preprocessing
 ------------
-CONSULT accepts as an input *k*-mer output file from [Jellyfish](http://www.genome.umd.edu/jellyfish.html)
-1. Cat fna files
+
+We suggest the following workflow to obtain *k*-mer list file to construct CONSULT database from multiple assembly references:
+
+1. To combine assembly references into single file you can use
+```
+cat /your/path/to/folder/*.fna > combined.fna
+```
+
+2. To extract canonical 35 bp *k*-mers with [Jellyfish](http://www.genome.umd.edu/jellyfish.html)
+
+- To compute 35bp canonical *k*-mer profile of fasta genomic reference
+```
+jellyfish count -m 35 -s 100M -t 24 -C combined.fna -o counts.jf
+```
+- To output a list of all the k-mers associated with their counts
+```
+jellyfish dump counts.jf > output_kmers.fa
+```
+
+3. Minimization was performed using custom C++11 script.  This script accepts as an input Jellyfish fasta file containing 35 bp canonicalk-mersextracted from reference genomes and outputs their 32 bp minimizers in fasta format.
+- To compile
+
+To run
+
+4.  To extract canonical 32 bp *k*-mers and remove duplicates
+
+- To compute 35bp and 32bp canonicalk-mer profiles of fasta genomic references we use
+
+In our testing we used minimzation technique to reduce number of *k*-mer count of original dataset. Alternatively if dataset is small and minimization is not needed you can just use last command directly to obtain a list of all 32 bp canonical *k*-mers and use as as an input into CONSUL software.
+
+Use output file as an input into consult
+
+combine assembly references into single file you can use
+
 2. jellyfish
 3. minimization
 4. jellyfish again (to remove canonical \kmers so they don't talke up db space)
 
-<!--It runs [Jellyfish][2] and [Mash][3] internally to efficiently compute k-mer profile of genome-skims and their intersection, and estimates the genomic distances by correcting for the effect of low coverage and sequencing error. Skmer also depends on [seqtk][5] for some FASTQ/A processings. -->
-
-The FASTA labels will not be used to identify the sequences in the output file. 
 
 ```
 g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
