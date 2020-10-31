@@ -35,16 +35,10 @@ Using CONSULT
 To construct standard reference database, you can use the following command:
 ```
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
-
 ```  
+Replace "$DBNAME" above with your preferred database name.
 
-
-  To construct reference database
-  
- 
-  
-  
-  To query sequence reads against reference database we ran./mainsearch -i DBFOLDERNAME -c 0 -t 24 -q QUERYFOLDERNAMEwhere arguments are:-i - name of the reference database-c - the highest number ofk-mers that is required to still keep sequencingread unclassified.  For instance, if at least onek-mer match is enough toclassify a read, "c" should be set to 0.  If at least twok-mer matches arerequired to call entire read a match, "c" should be set to 1.-t - number of threads-q - name of the folder where queries are locate
+To query sequence reads against reference database we ran./mainsearch -i DBFOLDERNAME -c 0 -t 24 -q QUERYFOLDERNAMEwhere arguments are:-i - name of the reference database-c - the highest number ofk-mers that is required to still keep sequencingread unclassified.  For instance, if at least onek-mer match is enough toclassify a read, "c" should be set to 0.  If at least twok-mer matches arerequired to call entire read a match, "c" should be set to 1.-t - number of threads-q - name of the folder where queries are locate
 
 
 
