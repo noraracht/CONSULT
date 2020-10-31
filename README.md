@@ -101,7 +101,7 @@ We suggest the following workflow to obtain *k*-mer list file to construct CONSU
 cat /your/path/to/folder/*.fna > combined.fna
 ```
 
-**2. Extraction of canonical 35 bp *k*-mers** was performed with [Jellyfish](http://www.genome.umd.edu/jellyfish.html). To compute canonical *k*-mer profile of fasta genomic reference and output a list of *k*-mers associated with their counts:
+- **Extraction of canonical 35 bp *k*-mers** was performed with [Jellyfish](http://www.genome.umd.edu/jellyfish.html). To compute canonical *k*-mer profile of fasta genomic reference and output a list of *k*-mers associated with their counts:
 ```
 jellyfish count -m 35 -s 100M -t 24 -C combined.fna -o counts.jf
 jellyfish dump counts.jf > 35bp_kmer_lst.fa
