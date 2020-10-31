@@ -83,7 +83,7 @@ Output will be sent to standard output by default **!!!!- not correct!!**.
 
 - -i - name of the reference database
 
-- -c - the highest number of *k*-mers that is required to still keep sequencing read unclassified. For instance, if at least one *k*-mer match is enough to classify a read, "c" should be set to 0.  If at least two *k*-mer matches are required to call entire read a match, *c* should be set to 1. Default setting for *c* in 0.
+- -c - the highest number of *k*-mers that is required to still keep sequencing read unclassified. For instance, if at least one *k*-mer match is enough to classify a read, "c" should be set to 0.  If at least two *k*-mer matches are required to call entire read a match, "c" should be set to 1. By default the value of "c" in 0.
 
 - -t - number of threads
 
