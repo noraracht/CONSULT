@@ -16,7 +16,8 @@ System Requirements
 ### Disk space
 Construction of CONSULT database requires approximately 120 GB of disk space. Exact footprint depends on a number of *k*-mers in a reference set. For instance, the size of the databases that we built during testing with default settings varied between 107 GB to 120 GB. In GTDB database 62 GB of disk space was used to store encodings, 56 GB was taken by lookup table, 2 GB was utilized by tag array and metadata. 
 
-**Memory:** CONSULT is designed to operate on a machine with 128 GB of RAM. To run, it requires enough free memory to hold the entire database in RAM. We note that during datatase construction the user will need slightly more than that in RAM to accomodate intermediary processes.
+### Memory
+CONSULT is designed to operate on a machine with 128 GB of RAM. To run, it requires enough free memory to hold the entire database in RAM. We note that during datatase construction the user will need slightly more than that in RAM to accomodate intermediary processes.
 
  
 Installation
@@ -49,7 +50,7 @@ To query a set of sequences against reference use the CONSULT command:
 Output will be sent to standard output by default - not correct!!. The files containing the sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA format is not supported at the moment. However, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using []() which attached dummy quality score to the sequences.
 
 The CONSULT program arguments are:
-:-i - name of the reference database
+**-i** - name of the reference database
 -c - the highest number ofk-mers that is required to still keep sequencingread unclassified.  For instance, if at least onek-mer match is enough toclassify a read, "c" should be set to 0.  If at least twok-mer matches arerequired to call entire read a match, "c" should be set to 1.
 -t - number of threads
 -q - name of the folder where queries are locate
