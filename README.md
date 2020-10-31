@@ -13,7 +13,7 @@ Summary data tables and scripts that we used during testing are available at htt
 System Requirements
 ------------
 
-### Disk space
+#### Disk space
 Construction of CONSULT database requires approximately 120 GB of disk space. Exact footprint depends on a number of *k*-mers in a reference set. For instance, the size of the databases that we built during testing with default settings varied between 107 GB to 120 GB. In GTDB database 62 GB of disk space was used to store encodings, 56 GB was taken by lookup table, 2 GB was utilized by tag array and metadata. 
 
  #### Memory
@@ -35,21 +35,21 @@ Using CONSULT
 ------------
 
 <!--Change to the CONSULT working directory and run the scripts below. -->
- ### Database construction
+#### Database construction
 To construct standard reference database, you can use the following command:
 ```
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
 ```  
 Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is ran. If this working directory already contains a database with the same name software will throw an exception. Existing library will not be overwritten and will be preserved.
 
- #### Query Search
+#### Query Search
 To query a set of sequences against reference use the CONSULT command:
 ```
  ./main_search -i $DBNAME -c 0 -t 24 -q $QUERY_FOLDER
 ``` 
 Output will be sent to standard output by default - not correct!!. The files containing the sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA format is not supported at the moment. However, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using []() which attached dummy quality score to the sequences.
 
-**where program arguments are:**
+**CONSULT program arguments are:**
 
 - -i - name of the reference database
 
