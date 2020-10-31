@@ -1,5 +1,7 @@
 // main.cpp -- defining, prototyping, and calling a function
 
+// internal version: main_map_v17.1.cpp
+
 // features:
 // change signatures from 64 to 32 bit int
 // replace map with arrays
@@ -415,21 +417,21 @@ int main(int argc, char *argv[]) {
     //positions [1] = {30, 28, 27, 26, 21, 19, 18, 17, 16, 13, 8, 4, 3, 0};
 
     // mask from 15.2 with k=15 experiment
-    positions [0] = {30, 28, 25, 24, 22, 21, 20, 17, 14, 13, 11, 5, 3, 2, 1};
-    positions [1] = {30, 29, 26, 24, 20, 19, 16, 14, 13, 12, 10, 7, 3, 1, 0};
+    //positions [0] = {30, 28, 25, 24, 22, 21, 20, 17, 14, 13, 11, 5, 3, 2, 1};
+    //positions [1] = {30, 29, 26, 24, 20, 19, 16, 14, 13, 12, 10, 7, 3, 1, 0};
     //positions [2] = {30, 29, 26, 23, 21, 20, 19, 18, 15, 11, 9, 7, 5, 3, 2};
 
-    for (l = 0; l < L; l++)
-    {
-        cout << "New positions for l : " << l << " >> ";
-
-        for (int j =0; j < K; j++)
-        {
-            cout << positions[l][j] << ", ";
-        }
-
-        cout << endl;
-    }
+//    for (l = 0; l < L; l++)
+//    {
+//        cout << "New positions for l : " << l << " >> ";
+//
+//        for (int j =0; j < K; j++)
+//        {
+//            cout << positions[l][j] << ", ";
+//        }
+//
+//        cout << endl;
+//    }
 
 
 
