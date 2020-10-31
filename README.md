@@ -6,6 +6,9 @@ CONSULT is the tool for contamination removal from genomic requencing reads usin
 
 CONSULT is a command-line tool implemented in c++11. It runs [Jellyfish][2] and [Mash][3] internally to efficiently compute k-mer profile of genome-skims and their intersection, and estimates the genomic distances by correcting for the effect of low coverage and sequencing error. Skmer also depends on [seqtk][5] for some FASTQ/A processings. 
 
+System Requirements
+------------
+
 Installation
 ------------
 **On 64-bit Linux and Mac OSX**, you can install  from bioconda channel using conda package manager. 
@@ -16,3 +19,7 @@ Installation
     conda config --add channels bioconda
     conda config --add channels conda-forge
  
+CONSULT Databases
+------------
+
+
