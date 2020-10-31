@@ -31,7 +31,7 @@ Core programs for map construction and query search need to be compiled using g+
     g++  main_search_v17.4.cpp -std=c++11 -fopenmp -O3 -o main_search
 ```    
 
-Usage
+Using CONSULT
 ------------
 
 <!--Change to the CONSULT working directory and run the scripts below. -->
@@ -63,13 +63,20 @@ Output will be sent to standard output by default - not correct!!. The files con
 
 Data Preprocessing
 ------------
+CONSULT accepts as an input *k*-mer output file from [Jellyfish][https://github.com/gmarcais/Jellyfish]
 <!--It runs [Jellyfish][2] and [Mash][3] internally to efficiently compute k-mer profile of genome-skims and their intersection, and estimates the genomic distances by correcting for the effect of low coverage and sequencing error. Skmer also depends on [seqtk][5] for some FASTQ/A processings. -->
 
 ```
 g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
 ```
 <!--Remember to add toy examples -->
-
+```diff
+- text in red
++ text in green
+! text in orange
+# text in gray
+@@ text in purple (and bold)@@
+```
 
 CONSULT Databases
 ------------
