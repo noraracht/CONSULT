@@ -21,8 +21,15 @@ System Requirements
 Installation
 ------------
 
-CONSULT is a command-line tool implemented in c++11 with some x86 assembly code. Database reading and query search are parallelized. Multithreading is handled using [OpenMP](https://www.openmp.org) [1]. 
-Core programs needed to build the map and run the search are written in C++11, and need to be compiled using g++. 
+CONSULT is a command-line tool implemented in C++11 with some x86 assembly code. Database reading and query search are parallelized using [OpenMP](https://www.openmp.org). Core programs for map construction and query search need to be compiled using g++. 
+```
+    g++ main_map.cpp -std=c++11 -O3 -o main_map
+    
+    g++  main_search.cpp -std=c++11 -fopenmp -O3 -o main_search
+```    
+
+
+
 
 It runs [Jellyfish][2] and [Mash][3] internally to efficiently compute k-mer profile of genome-skims and their intersection, and estimates the genomic distances by correcting for the effect of low coverage and sequencing error. Skmer also depends on [seqtk][5] for some FASTQ/A processings. 
 
