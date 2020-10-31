@@ -42,7 +42,7 @@ To construct standard reference database, you can use the following command:
 ```  
 Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is ran. If this working directory already contains a database with the same name software will throw an exception. This feature is included to prevent existing database from being overwritten.
 
-#### Query Search
+#### Query search
 To query a set of sequences against reference use the CONSULT command:
 ```
  ./main_search -i $DBNAME -c 0 -t 24 -q $QUERY_FOLDER
@@ -60,23 +60,20 @@ Output will be sent to standard output by default **!!!!- not correct!!**. The f
 - -q - name of the folder where queries are located
 
 
-
 Data Preprocessing
 ------------
 CONSULT accepts as an input *k*-mer output file from [Jellyfish][https://github.com/gmarcais/Jellyfish]
+1. Cat fna files
+2. jellyfish
+3. minimization
+4. jellyfish again (to remove canonical \kmers so they don't talke up db space)
+
 <!--It runs [Jellyfish][2] and [Mash][3] internally to efficiently compute k-mer profile of genome-skims and their intersection, and estimates the genomic distances by correcting for the effect of low coverage and sequencing error. Skmer also depends on [seqtk][5] for some FASTQ/A processings. -->
 
 ```
 g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
 ```
-<!--Remember to add toy examples -->
-```diff
-- text in red
-+ text in green
-! text in orange
-# text in gray
-@@ text in purple (and bold)@@
-```
+
 
 CONSULT Databases
 ------------
