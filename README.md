@@ -118,7 +118,9 @@ jellyfish dump counts.jf > 35bp_kmer_lst.fa
 g++ minimization_v3.0.cpp -std=c++11 -o main_minimization
 ```
 - To run:
-```./main_minimization -i 35bp_kmer_lst.fa -o 32bp_minzer_lst.fa```
+```
+./main_minimization -i 35bp_kmer_lst.fa -o 32bp_minzer_lst.fa
+```
 
 **4. Extraction of canonical 32 bp *k*-mers**. 
 - To compute *k*-mer profile and 
@@ -130,7 +132,7 @@ jellyfish count -m 32 -s 100M -t 24 -C 32bp_minzer_lst.fa -o counts.jf
 jellyfish dump counts.jf > 32bp_kmer_lst.fa
 ```
  
-We note, in our testing we used minimization technique to reduce *k*-mer count in original dataset. Alternatively if dataset is small and minimization is not needed the user can use last command directly to obtain a list of all 32 bp *k*-mers and utilize it as as an input into CONSULT software.
+We note, in our testing we used minimization technique to reduce *k*-mer count in original dataset. Alternatively, if dataset is small and minimization is not needed the user can use last command directly to obtain a list of all 32 bp *k*-mers and utilize it as as an input into CONSULT software.
 
 
 
