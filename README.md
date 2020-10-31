@@ -27,9 +27,13 @@ Core programs for map construction and query search need to be compiled using g+
 ```
     g++ main_map_v17.1.cpp -std=c++11 -O3 -o main_map
     g++  main_search_v17.4.cpp -std=c++11 -fopenmp -O3 -o main_search
-    g++  main_search_v17.4.cpp -std=c++11 -fopenmp -O3 -o main_search
-    minimization_v3.0.cpp
 ```    
+
+Using CONSULT
+------------
+
+g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
+
 
 
 
@@ -46,10 +50,10 @@ It runs [Jellyfish][2] and [Mash][3] internally to efficiently compute k-mer pro
     conda config --add channels bioconda
     conda config --add channels conda-forge
 ```    
-
-Using CONSULT
+Data Preprocessing
 ------------
-g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
+
+
 
 CONSULT Databases
 ------------
