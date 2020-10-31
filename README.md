@@ -78,4 +78,4 @@ g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
 Quick start
 ------------
 Share commands with toy examples
-Upload toy example files
+
