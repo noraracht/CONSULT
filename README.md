@@ -6,7 +6,7 @@ CONSULT is the tool for contamination removal from genomic sequencing reads usin
 The paper where we have described design of the algorithm and software architecture will be available online shortly. <!-- (open access): -->
 <!--  - [paper reference and doi][1] -->
 
-Summary data tables and scripts that we used during testing are available at [https://github.com/noraracht/lsh_scripts].
+Summary data tables and scripts that we used during testing are available at https://github.com/noraracht/lsh_scripts.
  <!--  - Raw data are deposited in -->
 
 
@@ -21,8 +21,7 @@ System Requirements
 Installation
 ------------
 
-CONSULT is a command-line tool implemented in c++11 with some x86 assembly code. Database reading and query seacrh are parallelized. Multithreading is handled using OpenMP[1]. 
-
+CONSULT is a command-line tool implemented in c++11 with some x86 assembly code. Database reading and query search are parallelized. Multithreading is handled using [OpenMP](https://www.openmp.org) [1]. 
 Core programs needed to build the map and run the search are written in C++11, and need to be compiled using g++. 
 
 It runs [Jellyfish][2] and [Mash][3] internally to efficiently compute k-mer profile of genome-skims and their intersection, and estimates the genomic distances by correcting for the effect of low coverage and sequencing error. Skmer also depends on [seqtk][5] for some FASTQ/A processings. 
@@ -44,4 +43,5 @@ Using CONSULT
 
 CONSULT Databases
 ------------
-[1]: OpenMP Application Programming Interface. (2018). Retrieved from [https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-5.0.pdf]. Accessed 30 Oct 2020
+ <!-- [1]: OpenMP Application Programming Interface. (2018). Retrieved from https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-5.0.pdf. Accessed 30 Oct 2020. -->
+[1]: 
