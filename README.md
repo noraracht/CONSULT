@@ -40,7 +40,7 @@ To construct standard reference database, you can use the following command:
 ```
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
 ```  
-Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is ran. If this working directory already containes a database with the same name software will throw an exception. Existing library will not be overwritten and will be preserved.
+Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is ran. If this working directory already contains a database with the same name software will throw an exception. Existing library will not be overwritten and will be preserved.
 
 ### Query Search
 To query a set of sequences against reference use the CONSULT command:
