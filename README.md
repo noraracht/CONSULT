@@ -50,6 +50,7 @@ To query a set of sequences against reference use the CONSULT command:
 Output will be sent to standard output by default - not correct!!. The files containing the sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA format is not supported at the moment. However, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using []() which attached dummy quality score to the sequences.
 
 The CONSULT program arguments are:
+
 **-i** - name of the reference database
 -c - the highest number ofk-mers that is required to still keep sequencingread unclassified.  For instance, if at least onek-mer match is enough toclassify a read, "c" should be set to 0.  If at least twok-mer matches arerequired to call entire read a match, "c" should be set to 1.
 -t - number of threads
