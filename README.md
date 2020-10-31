@@ -96,32 +96,36 @@ Data Preprocessing
 
 We suggest the following workflow to obtain *k*-mer list file to construct CONSULT database from multiple assembly references:
 
-- **To combine assembly references** into single file:
+**1. To combine assembly references** into single file:
 ```
 cat /path/to/folder/*.fna > combined.fna
 ```
 
 
-- **Extraction of canonical 35 bp *k*-mers** was performed with [Jellyfish](http://www.genome.umd.edu/jellyfish.html). To compute canonical *k*-mer profile of fasta genomic reference and output a list of *k*-mers associated with their counts:
+**2. Extraction of canonical 35 bp *k*-mers** from fasta genomic reference was performed with [Jellyfish](http://www.genome.umd.edu/jellyfish.html). 
+ - To compute *k*-mer profile:
 ```
 jellyfish count -m 35 -s 100M -t 24 -C combined.fna -o counts.jf
+```
+ - To output a list of *k*-mers associated with their counts:
+ ```
 jellyfish dump counts.jf > 35bp_kmer_lst.fa
 ```
 
+**3. Minimization was performed using custom C++11 script.**  The script accepts as an input [Jellyfish](http://www.genome.umd.edu/jellyfish.html) fasta file containing 35 bp canonical *k*-mers extracted from reference and outputs their 32 bp minimizers in fasta format. 
+- To compile: ```g++ minimization_v3.0.cpp -std=c++11 -o main_minimization```
+- To run: ```./main_minimization -i 35bp_kmer_lst.fa -o 32bp_minzer_lst.fa```
 
-- **Minimization was performed using custom C++11 script.**  The script accepts as an input [Jellyfish](http://www.genome.umd.edu/jellyfish.html) fasta file containing 35 bp canonical *k*-mers extracted from reference and outputs their 32 bp minimizers in fasta format. To compile and run our script:
-```
-g++ minimization_v3.0.cpp -std=c++11 -o main_minimization
-./main_minimization -i 35bp_kmer_lst.fa -o 32bp_minzer_lst.fa
-```
-
-
-- **Extraction of canonical 32 bp *k*-mers** and duplicate removal. To compute 32 bp canonical *k*-mer profile and output a list of all the k-mers associated with their counts
+**4. Extraction of canonical 32 bp *k*-mers**. 
+- To compute *k*-mer profile and 
 ```
 jellyfish count -m 32 -s 100M -t 24 -C 32bp_minzer_lst.fa -o counts.jf
+```
+ - To output a list of *k*-mers with their counts
+ ```
 jellyfish dump counts.jf > 32bp_kmer_lst.fa
 ```
-
+ 
 We note, in our testing we used minimization technique to reduce *k*-mer count in original dataset. Alternatively if dataset is small and minimization is not needed the user can use last command directly to obtain a list of all 32 bp *k*-mers and utilize it as as an input into CONSULT software.
 
 
