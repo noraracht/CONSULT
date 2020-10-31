@@ -33,7 +33,8 @@ Using CONSULT
 ------------
 
 <!--Change to the CONSULT working directory and run the scripts below. -->
-**Database construction:** To construct standard reference database, you can use the following command:
+###Database construction
+To construct standard reference database, you can use the following command:
 ```
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
 ```  
