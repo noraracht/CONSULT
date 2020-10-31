@@ -32,13 +32,21 @@ Core programs for map construction and query search need to be compiled using g+
 Using CONSULT
 ------------
 
+Change to the CONSULT working directory and run the scripts below. 
 To construct standard reference database, you can use the following command:
 ```
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
 ```  
-Replace "$DBNAME" above with your preferred database name.
+Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is run. If this working directory already containes a database with the same name software will throw an exception. Existing library will not be overwritten and will be preserved.
 
-To query sequence reads against reference database we ran./mainsearch -i DBFOLDERNAME -c 0 -t 24 -q QUERYFOLDERNAMEwhere arguments are:-i - name of the reference database-c - the highest number ofk-mers that is required to still keep sequencingread unclassified.  For instance, if at least onek-mer match is enough toclassify a read, "c" should be set to 0.  If at least twok-mer matches arerequired to call entire read a match, "c" should be set to 1.-t - number of threads-q - name of the folder where queries are locate
+To query a set of sequences against reference use the CONSULT command:
+```
+ ./main_search -i $DBNAME -c 0 -t 24 -q $QUERY_FOLDER
+``` 
+Output will be sent to standard output by default. The files containing the sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA/ format is not supported at the moment. However, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using []() which attached dummy quality score to the sequences.
+
+
+To query sequence reads  we ran./mainsearch -i DBFOLDERNAME -c 0 -t 24 -q QUERYFOLDERNAMEwhere arguments are:-i - name of the reference database-c - the highest number ofk-mers that is required to still keep sequencingread unclassified.  For instance, if at least onek-mer match is enough toclassify a read, "c" should be set to 0.  If at least twok-mer matches arerequired to call entire read a match, "c" should be set to 1.-t - number of threads-q - name of the folder where queries are locate
 
 
 
