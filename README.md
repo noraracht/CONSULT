@@ -39,7 +39,7 @@ To construct standard reference database, you can use the following command:
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
 ```  
 ###### Input:
-Input is supposed to be a FASTA file formatted as shown below. Specifically CONSULT is designed to accept [Jellyfish](http://www.genome.umd.edu/jellyfish.html) output files that represent a list of **32 bp** *k*-mers associated with their counts. See Data Preprocessing section for defails on how to generate these files. Note, however, CONSULT does not use the count values and the only relevant information is the sequence itself. Jellyfish output is pseudo-randomly ordered, and thus further randomization is not needed. The sequences may be repeated. Duplicate entries will be not be included in a database but since they are read and processed their presence will likely increase library construction time.
+Input is supposed to be a FASTA file formatted as shown below. Specifically CONSULT is designed to accept [Jellyfish](http://www.genome.umd.edu/jellyfish.html) output files that represent a list of **32 bp** *k*-mers associated with their counts. See Data Preprocessing section for details on how to generate these files. Note, however, CONSULT does not use the count values and the only relevant information is the sequence itself. Jellyfish output is pseudo-randomly ordered, and thus further randomization is not needed. The sequences may be repeated. Duplicate entries will be not be included in a database but since they are read and processed their presence will likely increase library construction time.
 
 Example FASTA:
 ```
