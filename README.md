@@ -43,5 +43,5 @@ Using CONSULT
 
 CONSULT Databases
 ------------
- <!-- [1]: OpenMP Application Programming Interface. (2018). Retrieved from https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-5.0.pdf. Accessed 30 Oct 2020. -->
-[1]: 
+ [1]: OpenMP Application Programming Interface. (2018). Retrieved from https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-5.0.pdf. Accessed 30 Oct 2020.
+[2]: 
