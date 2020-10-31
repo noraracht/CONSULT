@@ -32,7 +32,7 @@ Core programs for map construction and query search need to be compiled using g+
 Using CONSULT
 ------------
 
-Change to the CONSULT working directory and run the scripts below. 
+<!--Change to the CONSULT working directory and run the scripts below. -->
 To construct standard reference database, you can use the following command:
 ```
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
