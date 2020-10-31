@@ -38,6 +38,10 @@ To construct standard reference database, you can use the following command:
 ```
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
 ```  
+##### Input:
+Input file is supposed to be in FASTA format formatted as ...
+
+##### Output: 
 Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is ran. If this working directory already contains a database with the same name software will throw an exception. This feature is included to prevent existing database from being overwritten.
 
  #### Query search
