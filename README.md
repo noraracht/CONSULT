@@ -113,8 +113,12 @@ jellyfish dump counts.jf > 35bp_kmer_lst.fa
 ```
 
 **3. Minimization was performed using custom C++11 script.**  The script accepts as an input [Jellyfish](http://www.genome.umd.edu/jellyfish.html) fasta file containing 35 bp canonical *k*-mers extracted from reference and outputs their 32 bp minimizers in fasta format. 
-- To compile: ```g++ minimization_v3.0.cpp -std=c++11 -o main_minimization```
-- To run: ```./main_minimization -i 35bp_kmer_lst.fa -o 32bp_minzer_lst.fa```
+- To compile:
+```
+g++ minimization_v3.0.cpp -std=c++11 -o main_minimization
+```
+- To run:
+```./main_minimization -i 35bp_kmer_lst.fa -o 32bp_minzer_lst.fa```
 
 **4. Extraction of canonical 32 bp *k*-mers**. 
 - To compute *k*-mer profile and 
