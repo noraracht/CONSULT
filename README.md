@@ -62,7 +62,7 @@ To query a set of sequences against reference use the CONSULT command:
  ./main_search -i $DBNAME -c 0 -t 24 -q $QUERY_FOLDER
 ``` 
 ###### Input: 
-The files containing query sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA format is not supported at the moment. Note, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using [seqtk](https://github.com/lh3/seqtk) * *"seqtk seq -F CHAR"* * command which attaches dummy quality scores to the sequences. Quality factors are not being utlized but FASTA/FASTQ labels will be used to identify the sequences in the output file.
+The files containing query sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA format is not supported at the moment. Note, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using [seqtk](https://github.com/lh3/seqtk) ```"seqtk seq -F CHAR"``` command which attaches fake quality scores to the sequences. Quality factors are not being utlized by CONSULT but FASTA/FASTQ labels will be used to identify the sequences in the output file.
 
 Example FASTQ:
 ```
@@ -83,7 +83,7 @@ Output will be sent to standard output by default **!!!!- not correct!!**.
 
 - -i - name of the reference database
 
-- -c - the highest number of *k*-mers that is required to still keep sequencing read unclassified. For instance, if at least one *k*-mer match is enough to classify a read, "c" should be set to 0.  If at least two *k*-mer matches are required to call entire read a match, "c" should be set to 1. Default setting for c in 0.
+- -c - the highest number of *k*-mers that is required to still keep sequencing read unclassified. For instance, if at least one *k*-mer match is enough to classify a read, *c* should be set to 0.  If at least two *k*-mer matches are required to call entire read a match, *c* should be set to 1. Default setting for *c* in 0.
 
 - -t - number of threads
 
