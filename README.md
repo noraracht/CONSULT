@@ -77,7 +77,7 @@ TACTGCTGATATTCAGCTCACACC
 ```
 
 ###### Output: 
-CONSULT is designed for filtering out contaminants from sequencing reads so its output is a FASTQ file that contains **UNCLASSIFIED** (clean) reads and their corresponding sequence IDs, obtained from the input FASTQ headers. Files are stored into working directory where software is ran. Every sample retains its original file name prefixed with *"ucseq_"*. 
+CONSULT is designed for filtering out contaminants from sequencing reads so its output is a FASTQ file that contains **unclassified** (clean) reads and their corresponding sequence IDs, obtained from the input FASTQ headers. Files are stored into working directory where software is ran. Every sample retains its original file name prefixed with *"ucseq_"*. 
 <!--Log output is sent to standard output by default. -->
 
 **CONSULT program arguments are:**
@@ -96,7 +96,7 @@ Data Preprocessing
 
 We suggest the following workflow to obtain *k*-mer list file to construct CONSULT database from multiple assembly references:
 
-1. To combine assembly references into single file you can use
+**1. To combine assembly references into single file**
 ```
 cat /your/path/to/folder/*.fna > combined.fna
 ```
