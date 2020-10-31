@@ -52,10 +52,9 @@ Output will be sent to standard output by default - not correct!!. The files con
 The CONSULT program arguments are:
 
 **-i** - name of the reference database
--c - the highest number ofk-mers that is required to still keep sequencingread unclassified.  For instance, if at least onek-mer match is enough toclassify a read, "c" should be set to 0.  If at least twok-mer matches arerequired to call entire read a match, "c" should be set to 1.
+**-c** - the highest number of *k*-mers that is required to still keep sequencing read unclassified. For instance, if at least one $k$-mer match is enough to classify a read, "c" should be set to 0.  If at least two *k*-mer matches are required to call entire read a match, "c" should be set to 1.
 -t - number of threads
 -q - name of the folder where queries are locate
-
 
 
 
@@ -66,6 +65,8 @@ Data Preprocessing
 ```
 g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
 ```
+<!--Remember to add toy examples -->
+
 
 CONSULT Databases
 ------------
