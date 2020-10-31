@@ -62,7 +62,7 @@ To query a set of sequences against reference use the CONSULT command:
  ./main_search -i $DBNAME -c 0 -t 24 -q $QUERY_FOLDER
 ``` 
 ###### Input: 
-The files containing query sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA format is not supported at the moment. Note, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using [seqtk](https://github.com/lh3/seqtk) ```"seqtk seq -F CHAR"``` command which attaches fake quality scores to the sequences. Quality factors are not being utilized by CONSULT but FASTA/FASTQ labels will be used to identify the sequences in the output file.
+The files containing query sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA format is not supported at the moment. Note, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using [seqtk](https://github.com/lh3/seqtk) ```"seqtk seq -F CHAR"``` command which attaches fake quality scores to the sequences. Quality factors are not being utilized by CONSULT but FASTQ labels will be used to identify the sequences in the output file.
 
 Example FASTQ:
 ```
@@ -77,7 +77,8 @@ TACTGCTGATATTCAGCTCACACC
 ```
 
 ###### Output: 
-Output will be sent to standard output by default **!!!!- not correct!!**. 
+CONSULT is designed for filtering out contaminants from sequencing reads so its output is a FASTQ file that contains **UNCLASSIFIED** (clean) reads and their corresponding sequence IDs, obtained from the input FASTQ header. Files are stored into working directory where software is ran. Every sample retains its original file name prefixed with *"ucseq_"*. 
+<!--Log output is sent to standard output by default. -->
 
 **CONSULT program arguments are:**
 
