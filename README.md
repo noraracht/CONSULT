@@ -27,33 +27,38 @@ Core programs for map construction and query search need to be compiled using g+
 ```
     g++ main_map_v17.1.cpp -std=c++11 -O3 -o main_map
     g++  main_search_v17.4.cpp -std=c++11 -fopenmp -O3 -o main_search
+    
 ```    
 
 Using CONSULT
 ------------
 
-g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
+To construct standard reference database with default settings, you can use the following command:
+```
+ ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
 
+```  
+
+
+  To construct reference database
+  
+ 
+  
+  
+  To query sequence reads against reference database we ran./mainsearch -i DBFOLDERNAME -c 0 -t 24 -q QUERYFOLDERNAMEwhere arguments are:-i - name of the reference database-c - the highest number ofk-mers that is required to still keep sequencingread unclassified.  For instance, if at least onek-mer match is enough toclassify a read, "c" should be set to 0.  If at least twok-mer matches arerequired to call entire read a match, "c" should be set to 1.-t - number of threads-q - name of the folder where queries are locate
 
 
 
 
 It runs [Jellyfish][2] and [Mash][3] internally to efficiently compute k-mer profile of genome-skims and their intersection, and estimates the genomic distances by correcting for the effect of low coverage and sequencing error. Skmer also depends on [seqtk][5] for some FASTQ/A processings. 
 
-\ourmethod is implemented in {\tt C++11} ; it is (trivially) parallelized using OpenMP~\cite{Architecture2018}  to read the library and perform the search.
 
-**On 64-bit Linux and Mac OSX**, you can install  from bioconda channel using conda package manager. 
-1. Install [Miniconda][4] (you can skip this if you already have either of Miniconda or Anaconda installed). 
-2. Add the bioconda channel by running the following commands in your terminal (order matters):
-```
-    conda config --add channels defaults
-    conda config --add channels bioconda
-    conda config --add channels conda-forge
-```    
+
 Data Preprocessing
 ------------
-
-
+```
+g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
+```
 
 CONSULT Databases
 ------------
