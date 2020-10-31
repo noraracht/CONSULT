@@ -62,7 +62,7 @@ Output will be sent to standard output by default **!!!!- not correct!!**. The f
 
 Data Preprocessing
 ------------
-CONSULT accepts as an input *k*-mer output file from [Jellyfish][https://github.com/gmarcais/Jellyfish]
+CONSULT accepts as an input *k*-mer output file from [Jellyfish](http://www.genome.umd.edu/jellyfish.html)
 1. Cat fna files
 2. jellyfish
 3. minimization
