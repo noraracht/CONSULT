@@ -96,13 +96,13 @@ Data Preprocessing
 
 We suggest the following workflow to obtain *k*-mer list file to construct CONSULT database from multiple assembly references:
 
-**1. To combine assembly references** into single file:
+**[1]. To combine assembly references** into single file:
 ```
 cat /path/to/folder/*.fna > combined.fna
 ```
 
 
-**2. Extraction of canonical 35 bp *k*-mers** from fasta genomic reference was performed with [Jellyfish](http://www.genome.umd.edu/jellyfish.html). 
+**[2]. Extraction of canonical 35 bp *k*-mers** from fasta genomic reference was performed with [Jellyfish](http://www.genome.umd.edu/jellyfish.html). 
  - To compute *k*-mer profile:
 ```
 jellyfish count -m 35 -s 100M -t 24 -C combined.fna -o counts.jf
