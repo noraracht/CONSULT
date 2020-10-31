@@ -13,9 +13,11 @@ Summary data tables and scripts that we used during testing are available at htt
 System Requirements
 ------------
 
-**Disk space:** Construction of CONSULT database requires approximately 120 GB of disk space. Exact footprint depends on a number of *k*-mers in a reference set. For instance, the size of the databases that we built during testing with default settings varied between 107 GB to 120 GB. In GTDB database 62 GB of disk space was used to store encodings, 56 GB was taken by lookup table, 2 GB was utilized by tag array and metadata. 
+### Disk space
+Construction of CONSULT database requires approximately 120 GB of disk space. Exact footprint depends on a number of *k*-mers in a reference set. For instance, the size of the databases that we built during testing with default settings varied between 107 GB to 120 GB. In GTDB database 62 GB of disk space was used to store encodings, 56 GB was taken by lookup table, 2 GB was utilized by tag array and metadata. 
 
-**Memory:** CONSULT is designed to operate on a machine with 128 GB of RAM. To run, it requires enough free memory to hold the entire database in RAM. We note that during datatase construction the user will need slightly more than that in RAM to accomodate intermediary processes.
+### Memory
+CONSULT is designed to operate on a machine with 128 GB of RAM. To run, it requires enough free memory to hold the entire database in RAM. We note that during datatase construction the user will need slightly more than that in RAM to accomodate intermediary processes.
 
  
 Installation
@@ -40,7 +42,8 @@ To construct standard reference database, you can use the following command:
 ```  
 Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is ran. If this working directory already containes a database with the same name software will throw an exception. Existing library will not be overwritten and will be preserved.
 
-### Query Search: To query a set of sequences against reference use the CONSULT command:
+### Query Search
+To query a set of sequences against reference use the CONSULT command:
 ```
  ./main_search -i $DBNAME -c 0 -t 24 -q $QUERY_FOLDER
 ``` 
