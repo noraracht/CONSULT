@@ -39,7 +39,7 @@ To construct standard reference database, you can use the following command:
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
 ```  
 ###### Input:
-Input is supposed to be a FASTA file formatted as shown below. Specifically CONSULT is designed to accept [Jellyfish](http://www.genome.umd.edu/jellyfish.html) output files that represent a list of **32 bp** *k*-mers associated with their counts. See Data Preprocessing section for defails on how to generate these files. Note, however, CONSULT does not use the count values and the only relevant information is the sequence itself. Jellyfish output is pseudo-randomly ordered, and thus further randomization is not needed. The sequences should not need to be sorted and may be repeated. Duplicate entries will be not be included in a database but since they needs to be read and processed library construction time might increase.
+Input is supposed to be a FASTA file formatted as shown below. Specifically CONSULT is designed to accept [Jellyfish](http://www.genome.umd.edu/jellyfish.html) output files that represent a list of **32 bp** *k*-mers associated with their counts. See Data Preprocessing section for defails on how to generate these files. Note, however, CONSULT does not use the count values and the only relevant information is the sequence itself. Jellyfish output is pseudo-randomly ordered, and thus further randomization is not needed. The sequences may be repeated. Duplicate entries will be not be included in a database but since they are read and processed their presence will likely increase library construction time.
 
 Example FASTA:
 ```
@@ -54,7 +54,7 @@ ACCACATTTTATACATCGTAAGACAAGCGGCT
 ```
 
 ###### Output: 
-Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is ran. If this working directory already contains a database with the same name software will throw an exception. This feature is included to prevent existing database from being overwritten.
+Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is ran. If this working directory already contains a database with the same name software will throw an exception. This feature is included to prevent existing databases from being overwritten.
 
  ### Query search
 To query a set of sequences against reference use the CONSULT command:
@@ -62,11 +62,22 @@ To query a set of sequences against reference use the CONSULT command:
  ./main_search -i $DBNAME -c 0 -t 24 -q $QUERY_FOLDER
 ``` 
 ###### Input: 
+The files containing query sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA format is not supported at the moment. Note, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using ** [samtools]() !!! check** which attached dummy quality score to the sequences and use CONSULT on it. Quality factors are not being utlized but FASTA/FASTQ labels will be used to identify the sequences in the output file.
 
-Starcode supports FASTA and FASTQ files as well. 
+Example FASTQ:
+```
+@ FASTQ sequence 1 label
+CATCGAGCAGCTATGCAGCTACGAGT
++
+-$#'%-#.&)%#)"".)--'*()$)%
+@ FASTQ sequence 2 label
+TACTGCTGATATTCAGCTCACACC
++
+,*#%+#&*$-#,''+*)'&.,).,
+```
 
 ###### Output: 
-Output will be sent to standard output by default **!!!!- not correct!!**. The files containing the sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA format is not supported at the moment. However, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using ** [samtools]() !!! check** which attached dummy quality score to the sequences.
+Output will be sent to standard output by default **!!!!- not correct!!**. 
 
 **CONSULT program arguments are:**
 
