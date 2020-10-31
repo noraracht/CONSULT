@@ -75,6 +75,6 @@ g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
 ```
 
 
-CONSULT Databases
+Quick start
 ------------
 
