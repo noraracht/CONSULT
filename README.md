@@ -22,19 +22,13 @@ Installation
 ------------
 
 CONSULT is a command-line tool implemented in C++11 with some x86 assembly code. Database reading and query search are parallelized. Multithreading is handled using [OpenMP](https://www.openmp.org). 
-
-1. Scripts can be downloaded by [Wget](https://www.gnu.org/software/wget/)
+  
+Core programs for map construction and query search need to be compiled using g++. 
 ```
-    wget 
-    wget 
-    wget 
-```    
-
-2. Core programs for map construction and query search need to be compiled using g++. 
-```
-    g++ main_map.cpp -std=c++11 -O3 -o main_map
-    
-    g++  main_search.cpp -std=c++11 -fopenmp -O3 -o main_search
+    g++ main_map_v17.1.cpp -std=c++11 -O3 -o main_map
+    g++  main_search_v17.4.cpp -std=c++11 -fopenmp -O3 -o main_search
+    g++  main_search_v17.4.cpp -std=c++11 -fopenmp -O3 -o main_search
+    minimization_v3.0.cpp
 ```    
 
 
@@ -55,9 +49,8 @@ It runs [Jellyfish][2] and [Mash][3] internally to efficiently compute k-mer pro
 
 Using CONSULT
 ------------
-
+g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
 
 CONSULT Databases
 ------------
- [1]: OpenMP Application Programming Interface. (2018). Retrieved from https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-5.0.pdf. Accessed 30 Oct 2020.
-[2]: 
+
