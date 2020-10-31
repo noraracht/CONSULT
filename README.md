@@ -96,7 +96,7 @@ Data Preprocessing
 
 We suggest the following workflow to obtain *k*-mer list file to construct CONSULT database from multiple assembly references:
 
-**1. To combine assembly references** into single file:
+- **To combine assembly references** into single file:
 ```
 cat /your/path/to/folder/*.fna > combined.fna
 ```
