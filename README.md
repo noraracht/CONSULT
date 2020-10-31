@@ -113,7 +113,7 @@ jellyfish count -m 35 -s 100M -t 24 -C combined.fna -o counts.jf
 jellyfish dump counts.jf > 35bp_kmer_lst.fa
 ```
 
-**3. Minimization was performed using custom C++11 script.**  Out script accepts as an input Jellyfish fasta file containing 35 bp canonical *k*-mers extracted from reference genomes and outputs their 32 bp minimizers in fasta format.
+**3. Minimization was performed using custom C++11 script.**  The script accepts as an input [Jellyfish](http://www.genome.umd.edu/jellyfish.html) fasta file containing 35 bp canonical *k*-mers extracted from reference genomes and outputs their 32 bp minimizers in fasta format.
 
 - To compile:
 ```
@@ -138,7 +138,7 @@ jellyfish count -m 32 -s 100M -t 24 -C 32bp_minzer_lst.fa -o counts.jf
 jellyfish dump counts.jf > 32bp_kmer_lst.fa
 ```
 
-We note, in our testing we used minimzation technique to reduce *k*-mer count of original dataset. Alternatively if dataset is small and minimization is not needed the user can use last command directly to obtain a list of all 32 bp canonical *k*-mers and use it as as an input into CONSULT software.
+We note, in our testing we used minimization technique to reduce *k*-mer count in original dataset. Alternatively if dataset is small and minimization is not needed the user can use last command directly to obtain a list of all 32 bp canonical *k*-mers and utilize it as as an input into CONSULT software.
 
 
 
