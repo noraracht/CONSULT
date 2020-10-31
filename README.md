@@ -1,5 +1,5 @@
 # CONSULT
-Accurate contamination removal using locality-sensitive hashing
+<!-- Accurate contamination removal using locality-sensitive hashing-->
 
 CONSULT is the tool for contamination removal from genomic sequencing reads using exclusion read filtering approach. Relying on locality-sensitive hashing, CONSULT extracts *k*-mers from a query set and tests whether they fall within a user-specified hamming distance of the reference dataset. It supports the inclusion of approximately 8 billion *k*-mers in its reference library, accommodating datasets with tens of thousands of microbial species.
 
