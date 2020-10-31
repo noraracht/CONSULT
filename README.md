@@ -38,17 +38,19 @@ To construct standard reference database, you can use the following command:
 ```
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
 ```  
-###### Input: 
-Input file is supposed to be in FASTA format formatted as ...
+###### Input:
+Input is supposed to be a FASTA file formatted as shown below. Specifically CONSULT is designed to accept [Jellyfish](http://www.genome.umd.edu/jellyfish.html) output files that represent a list of **32 bp** *k*-mers associated with their counts. See Data Preprocessing section for defails on how to generate these files. Note, however, CONSULT does not use the count values and the only relevant information is the sequence itself. Jellyfish output is pseudo-randomly ordered, and thus further randomization is not needed. The sequences should not need to be sorted and may be repeated. Duplicate entries will be not be included in a database but since they needs to be read and processed library construction time might increase.
+
+Example FASTA:
 ```
 > FASTA sequence 1 label
-ATGCATCGATCACTCATCAGCTACAG
+AGACGAGCTTCTTCATCTAAAATGAATTCTCC
 > FASTA sequence 2 label
-TATCGACTATCTACGACTACATCA
+CCAGCTGCATTGATGGTGGGAGTTGGTAAAGG
 > FASTA sequence 3 label
-ATCATCACTCTAGCAGCGTACTCGCA
+GGACCTTGATTTTGACAAGATAGTCGGTAGAC
 > FASTA sequence 4 label
-ATGCATCGATTACTCATCAGCTACAG
+ACCACATTTTATACATCGTAAGACAAGCGGCT
 ```
 
 ###### Output: 
@@ -60,6 +62,8 @@ To query a set of sequences against reference use the CONSULT command:
  ./main_search -i $DBNAME -c 0 -t 24 -q $QUERY_FOLDER
 ``` 
 ###### Input: 
+
+Starcode supports FASTA and FASTQ files as well. 
 
 ###### Output: 
 Output will be sent to standard output by default **!!!!- not correct!!**. The files containing the sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA format is not supported at the moment. However, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using ** [samtools]() !!! check** which attached dummy quality score to the sequences.
@@ -84,6 +88,8 @@ CONSULT accepts as an input *k*-mer output file from [Jellyfish](http://www.geno
 4. jellyfish again (to remove canonical \kmers so they don't talke up db space)
 
 <!--It runs [Jellyfish][2] and [Mash][3] internally to efficiently compute k-mer profile of genome-skims and their intersection, and estimates the genomic distances by correcting for the effect of low coverage and sequencing error. Skmer also depends on [seqtk][5] for some FASTQ/A processings. -->
+
+The FASTA labels will not be used to identify the sequences in the output file. 
 
 ```
 g++-9 minimization_v3.0.cpp -std=c++11 -o main_minimization
