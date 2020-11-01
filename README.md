@@ -54,7 +54,7 @@ ACCACATTTTATACATCGTAAGACAAGCGGCT
 ```
 
 ###### Output: 
-Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is run. If this working directory already contains a database with the same name software will throw an exception. This feature is included to prevent existing databases from being overwritten.
+Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where the script is run. If this working directory already contains a database with the same name, the software will throw an exception. This feature is included to prevent existing databases from being overwritten.
 
  ### Query search
 To query a set of sequences against reference use the CONSULT command:
