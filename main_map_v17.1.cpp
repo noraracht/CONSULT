@@ -19,6 +19,7 @@
 // ./main_map -i G000016385_minimized -d 3  -o G000016385_nbr_map
 // ./main_map -i G000399765_fna_neighborhood_k32C.fa -d 3 -o G000399765_nbr_map
 // ./main_map -i G000307305_dump.fa -d 3 -o G000307305_nbr_map
+// ./main_map -i k32C_af_mininimization.fa -o G000307305_nbr_map
 
 // can be run without -d argument
 

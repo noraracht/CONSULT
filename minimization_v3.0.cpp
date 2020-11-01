@@ -12,6 +12,7 @@
 // ./main_minimization -i G000016385_neighbors_copy2.fa -o G000016385_minimized
 // ./main_minimization -i G000399765_fna_neighborhood_k32C.fa -o G000399765_minimized
 // ./main_minimization -i G000307305_dump.fa -o G000307305_minimized
+// ./main_minimization -i k35C_bef_mininimization.fa -o k32C_af_mininimization.fa
 
 // works with hamming_search 6.2
 
