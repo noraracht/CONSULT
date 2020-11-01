@@ -139,7 +139,7 @@ Quick start
 ------------
 To allow users to get familiar with the software or test their installations we have provided a few example files. After downloading and compiling software, go to the place where you put CONSULT, and run:
 
-- **To test minimization:**
+### To test minimization:
 ```
 ./main_minimization -i k35C_bef_mininimization.fa -o k32C_af_mininimization.fa
 ```
