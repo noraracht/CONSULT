@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 
     char *ivalue = NULL;
     uint64_t cvalue = 0;
-    uint64_t thread_count = 4;
+    uint64_t thread_count = 1;
     char *qvalue = NULL;
     //int index;
     int cf;
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
                 printf("Option -c has arg: %s\n", optarg);
                 break;
             case 't':
-                thread_count = atoi(optarg); // default is 4
+                thread_count = atoi(optarg); // default is 1
                 //printf("Option -t has arg: %s\n", optarg);
                 break;
             case 'q':
