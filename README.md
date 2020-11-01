@@ -94,7 +94,7 @@ CONSULT is designed for filtering out contaminants from sequencing reads so its 
 Data preprocessing
 ------------
 
-We suggest the following workflow to obtain *k*-mer list file to construct CONSULT database from multiple assembly references:
+We suggest the following workflow to obtain *k*-mer list file to construct CONSULT database from multiple assembly references.
 
 **1. To combine assembly references** into single file:
 ```
