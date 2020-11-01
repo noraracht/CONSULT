@@ -137,16 +137,25 @@ We note, in our testing we used minimization technique to reduce *k*-mer count i
 
 Quick start
 ------------
-To allow users to get familiar with the software or test their installations we have provided example files.
-
-To test your installation, go to the place where you put CONSULT, and run:
+To allow users to get familiar with the software or test their installations we have provided a few example files. After downloading and compiling software, go to the place where you put CONSULT, and run:
 
 - To test minimization:
+```
+./main_minimization -i k35C_bef_mininimization.fa -o k32C_af_mininimization.fa
+```
+Sample *k35C_bef_mininimization.fa* file contains contains 600000 35 bp $k$-mer sequences and took approximately 10s to run.
 
-- To construct small map:
+- To construct reference library:
+```
+./main_map -i k32C_af_mininimization.fa -o G000307305_nbr_map
+```
+This should take approximately 6-7 min to complete. Constructed database uses ~60 GB of disk space.
 
-- To query sequence:
+- To query sequence sample query:
+```
+./main_search -i G000307305_nbr_map -c 0 -t 4 -q 
 
+```
 
 
 
