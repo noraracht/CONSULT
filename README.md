@@ -156,11 +156,9 @@ This step took about 6-7 min to complete. Constructed database used ~60 GB of di
 ./main_search -i G000307305_nbr_map -c 0 -t 4 -q query_set
 
 ```
-Sample query file [G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/query_set/G000307305.fq) contains 66667 genomic reads. Approximately 38000 reads from the query should match to the database. Since library construction involved randomization number of matched sequences will not be exactly the same. Remaining unclassified reads were stored in [ucseq_G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/ucseq_G000307305.fq).
+Sample query file [G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/query_set/G000307305.fq) contains 66667 genomic reads. Classification running time was 2 min with 1 thread running locally. Approximately 38000 reads from the query should match to the database. Since library construction involved randomization number of matched sequences will not be exactly the same. Unclassified reads are stored in [ucseq_G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/ucseq_G000307305.fq).
+
+During search for every query sample CONSULT outputs to the standard ouput: sample name, sample line count and number of matched reads. Since each entry in a FASTQ file consists of 4 lines, total number of entry sequences can be easily computed from sample line counts.
 
 
-
-
-
- We have tested CONSULT only on Linux and MAC. About with no reported issues.
-CONSULT issues page.
+ We have tested CONSULT only on Linux and MAC.
