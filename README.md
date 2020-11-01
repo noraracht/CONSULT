@@ -29,7 +29,7 @@ Installation
     g++  main_search_v17.4.cpp -std=c++11 -fopenmp -O3 -o main_search
 ```    
 
-Using CONSULT
+Execution
 ------------
 
 <!--Change to the CONSULT working directory and run the scripts below. -->
