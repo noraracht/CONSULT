@@ -139,33 +139,28 @@ Quick start
 ------------
 To allow users to get familiar with the software or test their installations we have provided a few example files. After downloading and compiling software, go to the place where you put CONSULT, and run:
 
-- To test minimization:
+- **To test minimization:**
 ```
 ./main_minimization -i k35C_bef_mininimization.fa -o k32C_af_mininimization.fa
 ```
-Sample *k35C_bef_mininimization.fa* file contains contains 600000 35 bp $k$-mer sequences and took approximately 10s to run.
+Sample [k35C_bef_mininimization.fa](https://github.com/noraracht/CONSULT/blob/main/k35C_bef_mininimization.fa) file contains 600000 35 bp $k$-mer sequences and took approximately 10s to run. Minimized sequences were stored [k32C_bef_mininimization.fa](https://github.com/noraracht/CONSULT/blob/main/k32C_af_mininimization.fa).
 
-- To construct reference library:
+- **To construct reference library:**
 ```
 ./main_map -i k32C_af_mininimization.fa -o G000307305_nbr_map
 ```
-This should take approximately 6-7 min to complete. Constructed database uses ~60 GB of disk space.
+This step took about 6-7 min to complete. Constructed database used ~60 GB of disk space.
 
-- To query sequence sample query:
+- **To query sample:**
 ```
-./main_search -i G000307305_nbr_map -c 0 -t 4 -q 
+./main_search -i G000307305_nbr_map -c 0 -t 4 -q query_set
 
 ```
+Sample query file [G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/query_set/G000307305.fq) contains 66667 genomic reads. Approximately 38000 reads from the query should match to the database. Since library construction involved randomization number of matched sequences will not be exactly the same. Remaining unclassified reads were stored in [ucseq_G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/ucseq_G000307305.fq).
 
 
 
-To allow uses to We have provided toy examples to test software 
 
-
-
-Share commands with toy examples
-
-To use the software, go to the place where you put CONSULT minimization scipt.
 
  We have tested CONSULT only on Linux and MAC. About with no reported issues.
 CONSULT issues page.
