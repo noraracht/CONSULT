@@ -54,7 +54,7 @@ ACCACATTTTATACATCGTAAGACAAGCGGCT
 ```
 
 ###### Output: 
-Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is ran. If this working directory already contains a database with the same name software will throw an exception. This feature is included to prevent existing databases from being overwritten.
+Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where script is run. If this working directory already contains a database with the same name software will throw an exception. This feature is included to prevent existing databases from being overwritten.
 
  ### Query search
 To query a set of sequences against reference use the CONSULT command:
@@ -77,7 +77,7 @@ TACTGCTGATATTCAGCTCACACC
 ```
 
 ###### Output: 
-CONSULT is designed for filtering out contaminants from sequencing reads so its output is a FASTQ file that contains **unclassified** (clean) reads and their corresponding sequence IDs, obtained from the input FASTQ headers. Files are stored into working directory where software is ran. Every sample retains its original file name prefixed with *"ucseq_"*. 
+CONSULT is designed for filtering out contaminants from sequencing reads so its output is a FASTQ file that contains **unclassified** (clean) reads and their corresponding sequence IDs, obtained from the input FASTQ headers. Files are stored into working directory where software is run. Every sample retains its original file name prefixed with *"ucseq_"*. 
 <!--Log output is sent to standard output by default. -->
 
 **CONSULT program arguments are:**
