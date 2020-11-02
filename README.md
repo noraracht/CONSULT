@@ -26,8 +26,8 @@ Installation
 
 - CONSULT is a command-line tool implemented in C++11 with some x86 assembly code. Database reading and query search are parallelized using [OpenMP](https://www.openmp.org). Core programs for map construction and query search need to be compiled using g++ 
 ```
-    g++ main_map_v17.1.cpp -std=c++11 -O3 -o main_map
-    g++  main_search_v17.4.cpp -std=c++11 -fopenmp -O3 -o main_search
+    g++ main_map.cpp -std=c++11 -O3 -o main_map
+    g++  main_search.cpp -std=c++11 -fopenmp -O3 -o main_search
 ```    
 
 Execution
@@ -116,7 +116,7 @@ jellyfish dump counts.jf > 35bp_kmer_lst.fa
 **3. Minimization was performed using custom C++11 script.**  The script accepts as an input [Jellyfish](http://www.genome.umd.edu/jellyfish.html) fasta file containing 35 bp canonical *k*-mers extracted from reference and outputs their 32 bp minimizers in fasta format. 
 - To compile:
 ```
-g++ minimization_v3.0.cpp -std=c++11 -o main_minimization
+g++ minimization.cpp -std=c++11 -o main_minimization
 ```
 - To run:
 ```
