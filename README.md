@@ -7,15 +7,15 @@ The paper where we have described design of the algorithm and software architect
 <!--  - [paper reference and doi][1] -->
 
 Summary data tables and scripts that we used during testing are available at https://github.com/noraracht/lsh_scripts.
- <!--  - Raw data are deposited in -->
+Raw data are deposited in https://github.com/noraracht/lsh_raw_data
 
 
 System Requirements
 ------------
 
-- **Disk space:** Construction of CONSULT database requires approximately 120 GB of disk space. Exact footprint depends on a number of *k*-mers in a reference set. For instance, the size of the databases that we built during testing with default settings varied between 107 GB to 120 GB. In GTDB database 62 GB of disk space was used to store encodings, 56 GB was taken by lookup table, 2 GB was utilized by tag array and metadata. 
+- **Disk space:** Construction of CONSULT database requires approximately 120GB of disk space. Exact footprint depends on a number of *k*-mers in a reference set. For instance, the size of the databases that we built during testing with default settings varied between 107GB to 120GB. In GTDB database 62GB of disk space was used to store encodings, 56GB was taken by lookup table, 2GB was utilized by tag array and metadata. 
 
-- **Memory:** CONSULT is designed to operate on a machine with 128 GB of RAM. To run, it requires enough free memory to hold the entire database in RAM. We note that during datatase construction the user will need slightly more than that in RAM to accomodate intermediary processes.
+- **Memory:** CONSULT is designed to operate on a machine with 128GB of RAM. To run, it requires enough free memory to hold the entire database in RAM. We note that during datatase construction the user will need slightly more than that in RAM to accomodate intermediary processes.
 
  
 Installation
@@ -149,7 +149,7 @@ Sample [k35C_bef_mininimization.fa](https://github.com/noraracht/CONSULT/blob/ma
 ```
 ./main_map -i k32C_af_mininimization.fa -o G000307305_nbr_map
 ```
-This step takes about 7 min to complete. The constructed database uses ~60 GB of disk space.
+This step takes about 7 min to complete. The constructed database uses ~60GB of disk space.
 
 ### Query search testing
 ```
