@@ -92,8 +92,8 @@ int main(int argc, char *argv[]) {
     auto start = chrono::steady_clock::now();
     srand(time(NULL));
 
-    // output version info
-    cout << "v." << ver_num << endl;
+    // output version number
+    cout << "v." << std::fixed << std::setprecision(1) << ver_num << endl;
 
     char *ivalue = NULL;
     uint64_t dvalue = 3;
