@@ -8,7 +8,7 @@ The paper where we have described design of the algorithm and software architect
 
 Summary data tables and scripts that we used during testing are available at https://github.com/noraracht/lsh_scripts.
 
-Raw data are deposited in https://github.com/noraracht/lsh_raw_data
+Raw data are deposited in https://github.com/noraracht/lsh_raw_data.
 
 
 System Requirements
