@@ -27,7 +27,7 @@ Installation
 - CONSULT is a command-line tool implemented in C++11 with some x86 assembly code. Database reading and query search are parallelized using [OpenMP](https://www.openmp.org). Core programs for map construction and query search need to be compiled using g++ 
 ```
     g++ main_map.cpp -std=c++11 -O3 -o main_map
-    g++  main_search.cpp -std=c++11 -fopenmp -O3 -o main_search
+    g++ main_search.cpp -std=c++11 -fopenmp -O3 -o main_search
 ```    
 
 Execution
