@@ -3,12 +3,14 @@
 //to compile:
 // export PATH=/usr/local/bin:$PATH
 
-// g++-9  main_search_v17.4.cpp -std=c++11 -fopenmp -O3 -o main_search
+// g++-9  main_search_v17.5.cpp -std=c++11 -fopenmp -O3 -o main_search
 //on server: g++  main_search_v17.2.cpp -std=c++11 -fopenmp -O3 -o main_search91
 
 // tag is taken from the most significant bits of the kmer
 // based on version 14.1 plus adding two encoding arrays
 // outputs UCSEQ
+// do not output number of matched kmers per read to preserve original read id
+// and allow for cseq and ucseq split later
 
 //to run:
 // ./main_search -i G000307305_nbr_map -c 0 -t 4 -q /Users/admin/CLionProjects/hamming_search_1.0/excluded_fna_fq_downSmpl10M
@@ -53,7 +55,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define ver_num 17.4
+#define ver_num 17.5
 #define SL 32
 //#define SIGS_COLMN 6
 
@@ -1016,7 +1018,7 @@ int main(int argc, char *argv[]) {
 
                         if (matched <= c) {
                             //outputFile << ">" << name << " " << matched << endl;
-                            outputFile << name << " " << matched << endl;
+                            outputFile << name << endl;
                             //outputFile << name << endl;
                             //outputFile << line_of_file << endl;
                             outputFile << line_of_file_orig << endl;
