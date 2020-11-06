@@ -24,6 +24,10 @@ Installation
 <!-- may be add download links at some point -->
 - There is no installation required to run CONSULT.
 
+- Download using one of two approaches:
+    - You simply need to download the [zip file](https://github.com/noraracht/CONSULT/archive/main.zip) and extract the contents to a folder of your choice.
+    - Alternatively, you can clone the [github repository](https://github.com/noraracht/CONSULT.git) and proceed to compilation.
+
 - CONSULT is a command-line tool implemented in C++11 with some x86 assembly code. Database reading and query search are parallelized using [OpenMP](https://www.openmp.org). Core programs for map construction and query search need to be compiled using g++ 
 ```
     g++ main_map.cpp -std=c++11 -O3 -o main_map
