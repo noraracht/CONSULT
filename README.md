@@ -31,7 +31,7 @@ Installation
     - Alternatively, you can clone the [github repository](https://github.com/noraracht/CONSULT.git) and continue with compilation.
 
 <!--- CONSULT is a command-line tool implemented in C++11 with some x86 assembly code. Database reading and query search are parallelized using [OpenMP](https://www.openmp.org). Core programs for map construction and query search need to be compiled using g++ -->
-    - To compile go to the directory where core programs for map construction and query search are located and run:
+- To compile go to the directory where core programs for map construction and query search are located and run:
 ```
     g++ main_map.cpp -std=c++11 -O3 -o main_map
     g++ main_search.cpp -std=c++11 -fopenmp -O3 -o main_search
@@ -42,7 +42,7 @@ Execution
 
 <!--Change to the CONSULT working directory and run the scripts below. -->
  ### Database construction
-To construct standard reference database, go to the place where software was built and use the following command:
+To construct standard reference database, go to the place where scripts were compiled <!--software was builf--> and use the following command:
 ```
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
 ```  
