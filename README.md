@@ -14,24 +14,25 @@ The paper where we have described design of the algorithm and software architect
 System Requirements
 ------------
 
-- **Disk space:** Construction of CONSULT database requires approximately 120GB of disk space. Exact footprint depends on a number of *k*-mers in a reference set. For instance, the size of the databases that we built during testing with default settings varied between 107GB to 120GB. In GTDB database 62GB of disk space was used to store encodings, 56GB was taken by lookup table, 2GB was utilized by tag array and metadata. 
+- **Disk space:** Construction of CONSULT database requires approximately 120GB of disk space. Exact footprint depends on a number of *k*-mers in a reference set. The size of the three main databases that we built for testing with default settings varied between 107GB to 120GB. For example, for the GTDB database, 62GB of disk space was used to store encodings, 56GB was taken by lookup table, and 2GB was utilized by tag array and metadata. 
 
-- **Memory:** CONSULT is designed to operate on a machine with 128GB of RAM. To run, it requires enough free memory to hold the entire database in RAM. We note that during datatase construction the user will need slightly more RAM than specified to accomodate intermediary processes.
+- **Memory:** CONSULT is designed to operate on a machine with 128GB of RAM. To run, it requires enough free memory to hold the entire database in RAM. We note that during datatase construction the user will need slightly more RAM than 128GB to accomodate intermediary processes. Once the database is built, 128GB should be sufficient. 
 
-- **Dependencies:** CONSULT is a command-line tool implemented in C++11 with some x86 assembly code. Database reading and query search are parallelized using [OpenMP](https://www.openmp.org). Core programs for map construction and query search need to be compiled using somewhat recent version of g++ that will support C++11. For our tests we compiled with versions 4.8.5 and 7.2.0.
+- **Dependencies:** CONSULT is a command-line tool implemented in C++11 with some x86 assembly code. Database reading and query search are parallelized using [OpenMP](https://www.openmp.org). 
+    - Core programs for map construction and query search need to be compiled using somewhat recent version of g++ that will support C++11. For our tests we compiled with versions 4.8.5 and 7.2.0. 
+    - The database construction uses some external tools such as [Jellyfish](http://www.genome.umd.edu/jellyfish.html).
 
  
 Installation
 ------------
 <!-- may be add download links at some point -->
-- There is no installation required to run CONSULT.
 
-- Download using one of two approaches:
+1. Download using one of two approaches:
     - You can obtain the [zip file](https://github.com/noraracht/CONSULT/archive/main.zip) and extract the contents to a folder of your choice. Then, proceed to compilation.
     - Alternatively, you can clone the [github repository](https://github.com/noraracht/CONSULT.git) and continue with compilation.
 
 <!--- CONSULT is a command-line tool implemented in C++11 with some x86 assembly code. Database reading and query search are parallelized using [OpenMP](https://www.openmp.org). Core programs for map construction and query search need to be compiled using g++ -->
-- To compile go to the directory where core programs for map construction and query search are located and run:
+2. To compile, go to the directory where core programs for map construction and query search are located and run:
 ```
     g++ main_map.cpp -std=c++11 -O3 -o main_map
     g++ main_search.cpp -std=c++11 -fopenmp -O3 -o main_search
