@@ -48,7 +48,7 @@ To construct standard reference database, go to the place where scripts were com
  ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
 ```  
 ###### Input:
-Input is supposed to be a FASTA file formatted as shown below. Specifically CONSULT is designed to accept [Jellyfish](http://www.genome.umd.edu/jellyfish.html) output files that represent a list of **32 bp** *k*-mers associated with their counts. We tested with [Jellyfish](http://www.genome.umd.edu/jellyfish.html) 2.3.0. See Data preprocessing section for details on how to generate the input file.  Note that CONSULT does not use the count values and the only relevant information is the sequence itself. Jellyfish output is pseudo-randomly ordered, and thus further randomization is not needed. The sequences may be repeated. Duplicate entries will not be included in the database but since they are read and processed their presence will likely increase library construction time.
+Input is supposed to be a FASTA file formatted as shown below. Specifically CONSULT is designed to accept [Jellyfish](http://www.genome.umd.edu/jellyfish.html) output files that represent a list of **32 bp** *k*-mers associated with their counts. We tested with [Jellyfish](http://www.genome.umd.edu/jellyfish.html) 2.3.0. See Data preprocessing section for details on how to generate the input file.  Note that CONSULT does not use the count values and the only relevant information is the sequence itself. Jellyfish output is pseudo-randomly ordered, and thus further randomization is not needed. The sequences should not be repeated.
 
 Example FASTA:
 ```
