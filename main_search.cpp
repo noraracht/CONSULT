@@ -11,6 +11,7 @@
 // outputs UCSEQ
 // do not output number of matched kmers per read to preserve original read id
 // and allow for cseq and ucseq split later
+// change c definition, now c >=  (NOT >c); default c = 1 (at least 1 kmer is required to classify a read)
 
 //to run:
 // ./main_search -i G000307305_nbr_map -c 0 -t 4 -q /Users/admin/CLionProjects/hamming_search_1.0/excluded_fna_fq_downSmpl10M
@@ -55,7 +56,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define ver_num 17.5
+#define ver_num 17.6
 #define SL 32
 //#define SIGS_COLMN 6
 
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]) {
 
 
     char *ivalue = NULL;
-    uint64_t cvalue = 0;
+    uint64_t cvalue = 1;
     uint64_t thread_count = 1;
     char *qvalue = NULL;
     //int index;
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]) {
                 //printf("Option -i has arg: %s\n", optarg);
                 break;
             case 'c':
-                cvalue = atoi(optarg); // default is 0
+                cvalue = atoi(optarg); // default is 1
                 printf("Option -c has arg: %s\n", optarg);
                 break;
             case 't':
@@ -168,9 +169,9 @@ int main(int argc, char *argv[]) {
 
 
 
-    // set confidence threshold, should be at 0
-    uint64_t c = cvalue;
-    cout << "cvalue " << uint64_t(cvalue) << "\n";
+    // set confidence threshold, should be at >=1
+    uint64_t c = cvalue - 1;
+    cout << "cvalue >=" << uint64_t(cvalue) << "\n";
 
 
     // read parameters from input file
