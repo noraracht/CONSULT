@@ -93,7 +93,7 @@ CONSULT is designed for filtering out contaminants from sequencing reads so its 
 
 - -i - name of the reference database
 
-- -c - the highest number of *k*-mers that is required to still keep sequencing read unclassified. For instance, if at least one *k*-mer match is enough to classify a read (default setting mentioned in a paper), "c" should be set to 0 in a software.  If at least two *k*-mer matches are required to call entire read a match, "c" should be set to 1. By default the value of "c" is 0.
+- -c - the lowest number of *k*-mers that is required to call sequencing read classified. For instance, if at least one *k*-mer match is enough to classify a read (default setting mentioned in a paper), "c" should be set to 1 in a software.  If at least two *k*-mer matches are required to call entire read a match, "c" should be set to 2. By default the value of "c" is 1.
 
 - -t - number of threads
 
