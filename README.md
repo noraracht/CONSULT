@@ -10,6 +10,12 @@ The paper where we have described design of the algorithm and software architect
 
 * Raw data are deposited in https://github.com/noraracht/lsh_raw_data.
 
+* Our custom CONSULT libraries constructed using different genomic reference sets:
+    - [GTDB](https://drive.google.com/file/d/1MQJAXmZiTurumlZpvNoMLB0tKWGM_VE4/view?usp=sharing)
+    - [TOL](https://drive.google.com/file/d/1sA9HFjWoU2jZ2vjd98pHVDEFRzOKMImk/view?usp=sharing)
+    - [Bacterial/Archaeal Kraken](https://drive.google.com/file/d/1jeZB6b6aXl06BpPPsjM8oQA4xingJ1Dq/view?usp=sharing)
+    - [Mitochondrial CONSULT database](https://drive.google.com/file/d/1mFD3dYFrJKqUkWlkRHbrQt-6eG-_K5vI/view?usp=sharing)
+
 
 System Requirements
 ------------
