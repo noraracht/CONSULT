@@ -15,7 +15,8 @@ The paper where we have described design of the algorithm and software architect
     - [TOL](https://drive.google.com/file/d/1sA9HFjWoU2jZ2vjd98pHVDEFRzOKMImk/view?usp=sharing)
     - [Bacterial/Archaeal Kraken](https://drive.google.com/file/d/1jeZB6b6aXl06BpPPsjM8oQA4xingJ1Dq/view?usp=sharing)
     - [Mitochondrial CONSULT database](https://drive.google.com/file/d/1mFD3dYFrJKqUkWlkRHbrQt-6eG-_K5vI/view?usp=sharing)
-At the moment when using our libraries, library name needs to stay unchanged since library files are frefixed library name. This will change in fitire releases to allow for more flexibility.
+
+At the moment when using our libraries, library name needs to stay unchanged since library files are prefixed with library name. This will change in future releases to allow for more flexibility.
 
 
 System Requirements
