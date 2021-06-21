@@ -81,7 +81,7 @@ Replace "$DBNAME" above with your preferred database name. Reference library wil
  ### Query search
 To query a set of sequences against reference, go to the directory where binaries are and execute the CONSULT command:
 ```
- ./main_search -i $DBNAME -c 0 -t 24 -q $QUERY_FOLDER
+ ./main_search -i $DBNAME -c 1 -t 24 -q $QUERY_FOLDER
 ``` 
 ###### Input: 
 The files containing query sequences to be classified should be located in $QUERY_FOLDER and be in a FASTQ format (one uncompressed .fq/.fastq file per each sample). FASTA format is not supported at the moment. Note, if you need to query FASTA files you can convert .fasta/.fa to .fastq/.fq using [seqtk](https://github.com/lh3/seqtk) ```"seqtk seq -F CHAR"``` command which attaches fake quality scores to the sequences. Quality factors are not being utilized by CONSULT but FASTQ labels will be used to identify the sequences in the output file.
@@ -175,7 +175,7 @@ This step takes about 7 min to complete. The constructed database uses ~60GB of 
 
 ### Query search testing
 ```
-./main_search -i G000307305_nbr_map -c 0 -t 1 -q query_set
+./main_search -i G000307305_nbr_map -c 1 -t 1 -q query_set
 ```
 Sample query [G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/query_set/G000307305.fq) contains 66667 genomic reads. Classification running time is ~2 min with 1 thread. Approximately 38000 reads (in our case 38440) from the query should match to the database. Since library construction involves randomization exact number of matched sequences will be slightly different. Unclassified reads are stored in [ucseq_G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/ucseq_G000307305.fq).
 
