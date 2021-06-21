@@ -175,7 +175,7 @@ This step takes about 7 min to complete. The constructed database uses ~60GB of 
 
 ### Query search testing
 ```
-./main_search -i G000307305_nbr_map -c 1 -t 1 -q query_set
+./main_search -i G000307305_nbr_map -c 0 -t 1 -q query_set
 ```
 Sample query [G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/query_set/G000307305.fq) contains 66667 genomic reads. Classification running time is ~2 min with 1 thread. Approximately 38000 reads (in our case 38440) from the query should match to the database. Since library construction involves randomization exact number of matched sequences will be slightly different. Unclassified reads are stored in [ucseq_G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/ucseq_G000307305.fq).
 
