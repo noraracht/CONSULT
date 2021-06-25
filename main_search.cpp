@@ -11,12 +11,12 @@
 // outputs UCSEQ
 // do not output number of matched kmers per read to preserve original read id
 // and allow for cseq and ucseq split later
-// change c definition, now c >=  (NOT >c); default c = 1 (at least 1 kmer is required to classify a read)
+// v18.0 MODIFY DEFINITION OF c values to  >=, so to classify read with at least 1 kmer, c = 1
 
 //to run:
-// ./main_search -i G000307305_nbr_map -c 0 -t 4 -q /Users/admin/CLionProjects/hamming_search_1.0/excluded_fna_fq_downSmpl10M
-// ./main_search -i G000399765_nbr_map -c 0 -t 4  -q /Users/admin/CLionProjects/hamming_search_1.0/excluded_fna_fq_downSmpl10M
-// ./main_search -i G000016385_nbr_map -c 0 -t 4 -q /Users/admin/CLionProjects/hamming_search_1.0/excluded_fna_fq_downSmpl10M
+// ./main_search -i G000307305_nbr_map -c 1 -t 4 -q /Users/admin/CLionProjects/hamming_search_1.0/excluded_fna_fq_downSmpl10M
+// ./main_search -i G000399765_nbr_map -c 1 -t 4  -q /Users/admin/CLionProjects/hamming_search_1.0/excluded_fna_fq_downSmpl10M
+// ./main_search -i G000016385_nbr_map -c 1 -t 4 -q /Users/admin/CLionProjects/hamming_search_1.0/excluded_fna_fq_downSmpl10M
 
 
 
@@ -56,7 +56,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define ver_num 17.6
+#define ver_num 18.0
 #define SL 32
 //#define SIGS_COLMN 6
 
@@ -169,9 +169,9 @@ int main(int argc, char *argv[]) {
 
 
 
-    // set confidence threshold, should be at >=1
-    uint64_t c = cvalue - 1;
-    cout << "cvalue >=" << uint64_t(cvalue) << "\n";
+    // set confidence threshold, should be at 0
+    uint64_t c = cvalue;
+    cout << "cvalue " << uint64_t(cvalue) << "\n";
 
 
     // read parameters from input file
@@ -880,14 +880,14 @@ int main(int argc, char *argv[]) {
                                 }
 
 
-                                if (matched > c) {
+                                if (matched >= c) {
                                     break;
                                 }
 
                             }
                         }
 
-                            if (matched > c) {
+                            if (matched >= c) {
                                 break;
                             }
 
@@ -896,7 +896,8 @@ int main(int argc, char *argv[]) {
 
 
                         // try reverse complement
-                        if (matched == 0) {
+                        if (matched < c) {
+                            matched = 0;
 
                             int len = strlen(line_of_file.c_str());
                             char swap;
@@ -1004,20 +1005,22 @@ int main(int argc, char *argv[]) {
                                                 break;
                                             }
                                         }
-                                        if (matched > c) {
+                                        if (matched >= c) {
                                             break;
                                         }
                                     }
                                 }
-                                if (matched > c) {
+                                if (matched >= c) {
                                     break;
                                 }
 
                             }
                         }
 
+                        // if reads is still unclassified try reverse complement
+                        if (matched < c) {
 
-                        if (matched <= c) {
+
                             //outputFile << ">" << name << " " << matched << endl;
                             outputFile << name << endl;
                             //outputFile << name << endl;
@@ -1036,7 +1039,7 @@ int main(int argc, char *argv[]) {
 
 
                         }
-                        else if (matched > c)
+                        else if (matched >= c)
                         {
                             reads_matched += 1;
                         }
