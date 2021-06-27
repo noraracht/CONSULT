@@ -187,5 +187,6 @@ On a side note, during search for every query sample CONSULT outputs to the stan
 Some tips:
 ------------
 
-- **Disk space:** Construction of CONSULT database requires approximately 120GB of disk space. Exact footprint depends on a number of *k*-mers in a reference set. The size of the three main databases that we built for testing with default settings varied between 107GB to 120GB. For example, for the GTDB database, 62GB of disk space was used to
+- **Large size queries** When larger plant or mammalian samples need to be queried running time might be an issue so splitting the query into smaller samples and processing them independently on multiple nodes might be needed to  speed up computations.
+
  
