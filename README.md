@@ -181,6 +181,11 @@ Sample query [G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/quer
 
 
 On a side note, during search for every query sample CONSULT outputs to the standard output: sample name, sample line count and number of matched reads. Since each entry in a FASTQ file consists of 4 lines, total number of entry sequences as well as percentage of matched reads can be easily computed using these values.
+<!--We have tested CONSULT only on Linux and MAC. To report issues please use-->
 
 
- <!--We have tested CONSULT only on Linux and MAC. To report issues please use-->
+Some tips:
+------------
+
+- **Disk space:** Construction of CONSULT database requires approximately 120GB of disk space. Exact footprint depends on a number of *k*-mers in a reference set. The size of the three main databases that we built for testing with default settings varied between 107GB to 120GB. For example, for the GTDB database, 62GB of disk space was used to
+ 
