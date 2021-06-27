@@ -187,6 +187,6 @@ On a side note, during search for every query sample CONSULT outputs to the stan
 Some tips:
 ------------
 
-- **Large size queries** When larger plant or mammalian samples need to be queried running time might be an issue so splitting the query into smaller samples and processing them independently on multiple nodes might be needed to  speed up computations.
+- **Large size queries:** When larger plant or mammalian samples need to be queried running time might be an issue. In such cases we suggest to split the query into smaller samples to process them independently on multiple nodes and combine outputs downstream.
 
  
