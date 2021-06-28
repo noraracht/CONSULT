@@ -15,6 +15,7 @@ The paper where we have described design of the algorithm and software architect
     - [TOL](https://tera-trees.com/data/consult/v1.0.0/all_nbrhood_kmers_k32_p3l2clmn7_K15-map2-171_ToL.tar.gz)
     - [Bacterial/Archaeal Kraken](https://tera-trees.com/data/consult/v1.0.0/all_nbrhood_kmers_k32_p3l2clmn7_K15-map2-171_kraken.tar.gz)
     - [Mitochondrial CONSULT database](https://tera-trees.com/data/consult/v1.0.0/consult_mito_k32_p3l2clmn7_K15_tag2_v171.tar.gz)
+    - [Plastid CONSULT database](https://tera-trees.com/data/consult/v1.0.0/consult_plastid_k32_p3l2clmn7_K15_tag2_v171.tar.gz)
   
   <!--  - [GTDB](https://drive.google.com/file/d/1MQJAXmZiTurumlZpvNoMLB0tKWGM_VE4/view?usp=sharing)-->
   <!--    - [TOL](https://drive.google.com/file/d/1sA9HFjWoU2jZ2vjd98pHVDEFRzOKMImk/view?usp=sharing)-->
