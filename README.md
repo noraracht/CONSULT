@@ -56,34 +56,8 @@ Installation
     g++ main_map.cpp -std=c++11 -O3 -o consult_map
     ```    
 
-Execution
+Searching against a library 
 ------------
-
-<!--Change to the CONSULT working directory and run the scripts below. -->
- ### Database construction
-To construct standard reference database, go to the place where scripts were compiled <!--software was builf--> and use the following command:
-```
- ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
-```  
-###### Input:
-Input is supposed to be a FASTA file formatted as shown below. Specifically CONSULT is designed to accept [Jellyfish](http://www.genome.umd.edu/jellyfish.html) output files that represent a list of **32 bp** *k*-mers associated with their counts. We tested with [Jellyfish](http://www.genome.umd.edu/jellyfish.html) 2.3.0. See Data preprocessing section for details on how to generate the input file.  Note that CONSULT does not use the count values and the only relevant information is the sequence itself. Jellyfish output is pseudo-randomly ordered, and thus further randomization is not needed. The sequences should not be repeated.
-
-Example FASTA:
-```
-> FASTA sequence 1 label
-AGACGAGCTTCTTCATCTAAAATGAATTCTCC
-> FASTA sequence 2 label
-CCAGCTGCATTGATGGTGGGAGTTGGTAAAGG
-> FASTA sequence 3 label
-GGACCTTGATTTTGACAAGATAGTCGGTAGAC
-> FASTA sequence 4 label
-ACCACATTTTATACATCGTAAGACAAGCGGCT
-```
-
-###### Output: 
-Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where the script is run. If this working directory already contains a database with the same name, the software will throw an exception. This feature is included to prevent existing databases from being overwritten.
-
- ### Query search
 To query a set of sequences against reference, go to the directory where binaries are and execute the CONSULT command:
 ```
  ./main_search -i $DBNAME -c 1 -t 24 -q $QUERY_FOLDER
@@ -107,6 +81,23 @@ TACTGCTGATATTCAGCTCACACC
 CONSULT is designed for filtering out contaminants from sequencing reads so its output is a FASTQ file that contains **unclassified** (clean) reads and their corresponding sequence IDs, obtained from the input FASTQ headers. Files are stored into working directory where software is run. Every sample retains its original file name prefixed with *"ucseq_"*. 
 <!--Log output is sent to standard output by default. -->
 
+### A Quick Test of Query Search
+
+* We have a toy-example reference library included called `G000307305_nbr_map`. 
+* We also have a test query *directory* called `query_set`. 
+
+Use the following command to search `quert_set` against `G000307305_nbr_map`
+
+```
+./main_search -i G000307305_nbr_map -c 1 -t 1 -q query_set
+```
+
+* The Ssmple query [G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/query_set/G000307305.fq) contains 66667 genomic reads. 
+* Classification running time is ~2 min with 1 thread. 
+* Approximately 38000 reads (in our case 38440) from the query should match to the database. 
+* Unclassified reads are stored in [ucseq_G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/ucseq_G000307305.fq).
+
+
 **CONSULT program arguments are:**
 
 - -i - name of the reference database
@@ -118,9 +109,18 @@ CONSULT is designed for filtering out contaminants from sequencing reads so its 
 - -q - name of the folder where queries are located
 
 
-Data preprocessing
-------------
+<!--Change to the CONSULT working directory and run the scripts below. -->
 
+
+Database construction
+-----
+
+There are two steps:
+
+1. Preprocsessing your input genomes
+2. Consruction of the CONSULT library. 
+
+### 1. Preprocessing 
 We suggest the following workflow to obtain *k*-mer list file to construct CONSULT database from multiple assembly references.
 
 **1. To combine assembly references** into single file:
@@ -162,8 +162,33 @@ jellyfish dump counts.jf > 32bp_kmer_lst.fa
 We note, in our testing we used minimization technique to reduce *k*-mer count in original dataset. Alternatively, if dataset is small and minimization is not needed the user can use last command directly to obtain a list of all 32 bp *k*-mers and utilize it as an input into CONSULT software.
 
 
-Quick start
-------------
+### 2. Construction
+To construct standard reference database, go to the place where scripts were compiled <!--software was builf--> and use the following command:
+```
+ ./main_map -i $INPUT_FASTA_FILE -o $DBNAME
+```  
+###### Input:
+Input is supposed to be a FASTA file formatted as shown below. Specifically CONSULT is designed to accept [Jellyfish](http://www.genome.umd.edu/jellyfish.html) output files that represent a list of **32 bp** *k*-mers associated with their counts. We tested with [Jellyfish](http://www.genome.umd.edu/jellyfish.html) 2.3.0. See Data preprocessing section for details on how to generate the input file.  Note that CONSULT does not use the count values and the only relevant information is the sequence itself. Jellyfish output is pseudo-randomly ordered, and thus further randomization is not needed. The sequences should not be repeated.
+
+Example FASTA:
+```
+> FASTA sequence 1 label
+AGACGAGCTTCTTCATCTAAAATGAATTCTCC
+> FASTA sequence 2 label
+CCAGCTGCATTGATGGTGGGAGTTGGTAAAGG
+> FASTA sequence 3 label
+GGACCTTGATTTTGACAAGATAGTCGGTAGAC
+> FASTA sequence 4 label
+ACCACATTTTATACATCGTAAGACAAGCGGCT
+```
+
+###### Output: 
+Replace "$DBNAME" above with your preferred database name. Reference library will be created in the same directory where the script is run. If this working directory already contains a database with the same name, the software will throw an exception. This feature is included to prevent existing databases from being overwritten.
+
+
+
+### A Quick Test
+
 To allow users to get familiar with the software and test their installations we have provided a few example files. After downloading and compiling the software, go to the directory where CONSULT was installed and run:
 
 ### Minimization testing
@@ -178,20 +203,15 @@ Sample [k35C_bef_mininimization.fa](https://github.com/noraracht/CONSULT/blob/ma
 ```
 This step takes about 7 min to complete. The constructed database uses ~60GB of disk space.
 
-### Query search testing
-```
-./main_search -i G000307305_nbr_map -c 1 -t 1 -q query_set
-```
-Sample query [G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/query_set/G000307305.fq) contains 66667 genomic reads. Classification running time is ~2 min with 1 thread. Approximately 38000 reads (in our case 38440) from the query should match to the database. Since library construction involves randomization exact number of matched sequences will be slightly different. Unclassified reads are stored in [ucseq_G000307305.fq](https://github.com/noraracht/CONSULT/blob/main/ucseq_G000307305.fq).
+This constructed library should similar to what we used in the query search example. However, small changes due the random ordering of jellyfish output may be observed. 
 
 
-On a side note, during search for every query sample CONSULT outputs to the standard output: sample name, sample line count and number of matched reads. Since each entry in a FASTQ file consists of 4 lines, total number of entry sequences as well as percentage of matched reads can be easily computed using these values.
-<!--We have tested CONSULT only on Linux and MAC. To report issues please use-->
-
-
-Some tips:
+Useful tips:
 ------------
 
 - **Large size queries:** When larger plant or mammalian samples (>20 million reads) need to be queried there might be a need to speed up computation. In such cases we suggest to split the query into smaller samples to process them independently on multiple nodes and combine outputs downstream.
+
+- During search for every query sample CONSULT outputs to the standard output: sample name, sample line count and number of matched reads. Since each entry in a FASTQ file consists of 4 lines, total number of entry sequences as well as percentage of matched reads can be easily computed using these values.
+<!--We have tested CONSULT only on Linux and MAC. To report issues please use-->
 
  
