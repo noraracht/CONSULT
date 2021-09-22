@@ -33,8 +33,8 @@ System Requirements
 - **Memory:** CONSULT is designed to operate on a machine with 128GB of RAM. To run, it requires enough free memory to hold the entire database in RAM. We note that during datatase construction the user will need slightly more RAM than 128GB to accomodate intermediary processes. Once the database is built, 128GB should be sufficient. 
 
 - **Dependencies:** CONSULT is a command-line tool implemented in C++11 with some x86 assembly code. Database reading and query search are parallelized using [OpenMP](https://www.openmp.org). 
-    - Core programs for map construction and query search need to be compiled using somewhat recent version of g++ that will support C++11. For our tests we compiled with versions 4.8.5 and 7.2.0. 
-    - The database construction uses some external tools such as [Jellyfish](http://www.genome.umd.edu/jellyfish.html).
+    - We complied map construction and query search with a g++ that supports C++11 (required). For our tests we have compiled with versions 4.8.5 and 7.2.0, both of which work. 
+    - The **database construction** uses some external tools such as [Jellyfish](http://www.genome.umd.edu/jellyfish.html).
 
  
 Installation
