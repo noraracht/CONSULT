@@ -50,11 +50,11 @@ Installation
 2. To compile, go to the directory where core programs for map construction and query search are located and run:
     * To compile the CONSULT search method, run:
     ```bash  
-    g++ main_search.cpp -std=c++11 -fopenmp -O3 -o consult_search
+    g++ main_search.cpp -std=c++11 -fopenmp -O3 -o main_search
     ```   
     * If you also need to construct a library, you need to use:
     ```bash 
-    g++ main_map.cpp -std=c++11 -O3 -o consult_map
+    g++ main_map.cpp -std=c++11 -O3 -o main_map
     ```    
 
 Searching against a library 
