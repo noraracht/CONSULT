@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <getopt.h>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -34,13 +35,62 @@ int main(int argc, char *argv[]) {
   // Display version number.
   cout << "v." << std::fixed << std::setprecision(1) << VERSION << endl;
 
+  string input_filename;
+  string output_filename;
+
+  int cf_tmp;
+  opterr = 0;
+
+  while (1) {
+    static struct option long_options[] = {
+        {"input-fasta-file", 1, 0, 'i'},
+        {"output-fasta-file", 1, 0, 'o'},
+        {0, 0, 0, 0},
+    };
+
+    int option_index = 0;
+    cf_tmp = getopt_long(argc, argv, "i:o:", long_options, &option_index);
+
+    if ((optarg != NULL) && (*optarg == '-')) {
+      cf_tmp = ':';
+    }
+
+    if (cf_tmp == -1)
+      break;
+    switch (cf_tmp) {
+    case 'i':
+      input_filename = optarg;
+      break;
+    case 'o':
+      output_filename = optarg;
+      break;
+    case ':':
+      printf("Missing option for '-%s'.\n", argv[optind - 2]);
+      if (long_options[option_index].has_arg == 1) {
+        return 1;
+      }
+      break;
+    case '?':
+      if (optopt == 'i')
+        fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+      else if (optopt == 'o')
+        fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+      else if (isprint(optopt))
+        fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+      else
+        fprintf(stderr, "Unknown option '%s'.\n", argv[optind - 1]);
+      return 1;
+    default:
+      abort();
+    }
+  }
+
   if (argc != 5) {
     printf("Number of supplied arguments is not correct.\n");
     exit(0);
   }
 
   // Open input file.
-  string input_filename = argv[2];
   ifstream fin(input_filename);
   // Show message:
   if (!fin.is_open()) {
@@ -50,7 +100,6 @@ int main(int argc, char *argv[]) {
   cout << "Input file " << input_filename << endl;
 
   // Open output file.
-  string output_filename = argv[4];
   ofstream outputFile;
   outputFile.open(output_filename);
   // Show message:

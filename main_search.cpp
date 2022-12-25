@@ -6,6 +6,7 @@
 #include <cstring>
 #include <dirent.h>
 #include <fstream>
+#include <getopt.h>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -55,23 +56,48 @@ int main(int argc, char *argv[]) {
   char *query_dir = NULL;
   uint64_t c_value = 1;
   uint64_t thread_count = 1;
+  bool save_distances = false;
 
   int cf_tmp;
   opterr = 0;
 
-  while ((cf_tmp = getopt(argc, argv, "i:c:t:q:")) != -1)
+  while (1) {
+    static struct option long_options[] = {
+        {"input-library-dir", 1, 0, 'i'}, {"query-dir", 1, 0, 'q'},
+        {"c-value", 1, 0, 'c'},           {"thread-count", 1, 0, 't'},
+        {"save-distances", 0, 0, 's'},    {0, 0, 0, 0},
+    };
+
+    int option_index = 0;
+    cf_tmp = getopt_long(argc, argv, "i:q:c:t:s", long_options, &option_index);
+
+    if ((optarg != NULL) && (*optarg == '-')) {
+      cf_tmp = ':';
+    }
+
+    if (cf_tmp == -1)
+      break;
     switch (cf_tmp) {
     case 'i':
       input_library_dir = optarg;
       break;
     case 'c':
-      c_value = atoi(optarg); // Default is 1.
+      c_value = max(atoi(optarg), 1); // Default is 1.
       break;
     case 't':
-      thread_count = atoi(optarg); // Default is 1.
+      thread_count = max(atoi(optarg), 1); // Default is 1.
       break;
     case 'q':
       query_dir = optarg;
+      break;
+    case 's':
+      save_distances = true;
+      break;
+    case ':':
+      printf("Missing option for '-%s'.\n", argv[optind - 2]);
+      if (long_options[option_index].has_arg == 1) {
+        return 1;
+      }
       break;
     case '?':
       if (optopt == 'i')
@@ -81,16 +107,17 @@ int main(int argc, char *argv[]) {
       else if (isprint(optopt))
         fprintf(stderr, "Unknown option `-%c'.\n", optopt);
       else
-        fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+        fprintf(stderr, "Unknown option '%s'.\n", argv[optind - 1]);
       return 1;
     default:
       abort();
     }
+  }
 
-  if (argc <= 9) {
+  if (argc <= 10) {
     printf("-- Arguments supplied are \nMap %s\nQuery %s\nThreads %ld\n",
            input_library_dir, query_dir, thread_count);
-  } else if (argc > 9) {
+  } else if (argc > 10) {
     printf("Too many arguments are supplied.\n");
     exit(0);
   }

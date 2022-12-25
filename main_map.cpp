@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <getopt.h>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -56,17 +57,33 @@ int main(int argc, char *argv[]) {
   // Display version number.
   cout << "v." << std::fixed << std::setprecision(1) << VERSION << endl;
 
-  char *input_file = NULL;
+  char *input_fasta_file = NULL;
   uint64_t d_value = 3;
   char *output_library_dir = NULL;
 
   int cf_tmp;
   opterr = 0;
 
-  while ((cf_tmp = getopt(argc, argv, "i:d:o:")) != -1)
+  while (1) {
+    static struct option long_options[] = {
+        {"input-fasta-file", 1, 0, 'i'},
+        {"output-library-dir", 1, 0, 'd'},
+        {"d-value", 1, 0, 'd'},
+        {0, 0, 0, 0},
+    };
+
+    int option_index = 0;
+    cf_tmp = getopt_long(argc, argv, "i:d:o:", long_options, &option_index);
+
+    if ((optarg != NULL) && (*optarg == '-')) {
+      cf_tmp = ':';
+    }
+
+    if (cf_tmp == -1)
+      break;
     switch (cf_tmp) {
     case 'i':
-      input_file = optarg;
+      input_fasta_file = optarg;
       break;
     case 'd':
       // At the moment p=3 is fixed so d_value is not being used.
@@ -74,6 +91,12 @@ int main(int argc, char *argv[]) {
       break;
     case 'o':
       output_library_dir = optarg;
+      break;
+    case ':':
+      printf("Missing option for '-%s'.\n", argv[optind - 2]);
+      if (long_options[option_index].has_arg == 1) {
+        return 1;
+      }
       break;
     case '?':
       if (optopt == 'i')
@@ -83,23 +106,24 @@ int main(int argc, char *argv[]) {
       else if (isprint(optopt))
         fprintf(stderr, "Unknown option `-%c'.\n", optopt);
       else
-        fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+        fprintf(stderr, "Unknown option '%s'.\n", argv[optind - 1]);
       return 1;
     default:
       abort();
     }
+  }
 
   uint64_t kmer_count = 0;
 
   if (argc <= 7) {
     printf("-- Arguments supplied are \nInput file %s\nOutput directory %s\n",
-           input_file, output_library_dir);
+           input_fasta_file, output_library_dir);
 
     const int SZ = 1024 * 1024;
     vector<char> buff(SZ);
 
     // Open input file.
-    string input_fin = input_file;
+    string input_fin = input_fasta_file;
     ifstream ifs(input_fin);
 
     if (!ifs.is_open()) {
@@ -118,7 +142,7 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
-  string input_fin = input_file;
+  string input_fin = input_fasta_file;
   ifstream fin(input_fin);
   if (!fin.is_open()) {
     std::cout << "Error opening file \n";
