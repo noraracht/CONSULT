@@ -31,7 +31,7 @@
 #include <unistd.h>
 
 #define VERSION 17.1
-#define SL 32
+#define KMER_LENGTH 32
 
 #define SIGS_COL_COUNT 7
 
@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
   cout << "v." << std::fixed << std::setprecision(1) << VERSION << endl;
 
   char *input_fasta_file = NULL;
-  uint64_t d_value = 3;
   char *output_library_dir = NULL;
+  uint64_t p_value = 3;
 
   int cf_tmp;
   opterr = 0;
@@ -67,13 +67,13 @@ int main(int argc, char *argv[]) {
   while (1) {
     static struct option long_options[] = {
         {"input-fasta-file", 1, 0, 'i'},
-        {"output-library-dir", 1, 0, 'd'},
-        {"d-value", 1, 0, 'd'},
+        {"output-library-dir", 1, 0, 'o'},
+        {"p-value", 1, 0, 'p'},
         {0, 0, 0, 0},
     };
 
     int option_index = 0;
-    cf_tmp = getopt_long(argc, argv, "i:d:o:", long_options, &option_index);
+    cf_tmp = getopt_long(argc, argv, "i:o:p:", long_options, &option_index);
 
     if ((optarg != NULL) && (*optarg == '-')) {
       cf_tmp = ':';
@@ -85,9 +85,8 @@ int main(int argc, char *argv[]) {
     case 'i':
       input_fasta_file = optarg;
       break;
-    case 'd':
-      // At the moment p=3 is fixed so d_value is not being used.
-      d_value = atoi(optarg);
+    case 'p':
+      p_value = atoi(optarg); // Default value is 3.
       break;
     case 'o':
       output_library_dir = optarg;
@@ -100,11 +99,11 @@ int main(int argc, char *argv[]) {
       break;
     case '?':
       if (optopt == 'i')
-        fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+        fprintf(stderr, "Option '-%c' requires an argument.\n", optopt);
       else if (optopt == 'o')
-        fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+        fprintf(stderr, "Option '-%c' requires an argument.\n", optopt);
       else if (isprint(optopt))
-        fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+        fprintf(stderr, "Unknown option '-%c'.\n", optopt);
       else
         fprintf(stderr, "Unknown option '%s'.\n", argv[optind - 1]);
       return 1;
@@ -116,8 +115,9 @@ int main(int argc, char *argv[]) {
   uint64_t kmer_count = 0;
 
   if (argc <= 7) {
-    printf("-- Arguments supplied are \nInput file %s\nOutput directory %s\n",
-           input_fasta_file, output_library_dir);
+    printf(
+        "-- Arguments supplied are; \nInput file : %s\nOutput directory : %s\n",
+        input_fasta_file, output_library_dir);
 
     const int SZ = 1024 * 1024;
     vector<char> buff(SZ);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     ifstream ifs(input_fin);
 
     if (!ifs.is_open()) {
-      std::cout << "Error opening file \n";
+      std::cout << "Cannot open file!" << endl;
       exit(0);
     }
 
@@ -145,38 +145,33 @@ int main(int argc, char *argv[]) {
   string input_fin = input_fasta_file;
   ifstream fin(input_fin);
   if (!fin.is_open()) {
-    std::cout << "Error opening file \n";
+    std::cout << "Cannot open file!" << endl;
     exit(0);
   }
 
-  uint64_t p = 3;
-  /* if ((d_value <= 0) || (d_value > 3)) { */
-  /*   p = 3; */
-  /* } else { */
-  /*   p = d_value; */
-  /* } */
-  uint64_t L = 10;
-  float alpha = 0.95;
-  uint64_t K = round(log(1 - (pow((1 - alpha), (1 / float(L))))) /
-                     log(1 - float(p) / float(SL)));
-  K = 15;
+  uint8_t k = KMER_LENGTH;
+  uint64_t p = p_value;
+  uint64_t L = 2;
+  /* float alpha = 0.95; // This is just to determine correct h value. */
+  uint64_t h = 15;
+  /* h = round(log(1 - (pow((1 - alpha), (1 / float(L))))) / */
+  /*           log(1 - float(p) / float(k))); */
 
   cout << "k-mer count = " << kmer_count << endl;
+  cout << "k = " << k << '\n';
   cout << "p = " << p << '\n';
-  cout << "SL = " << int(SL) << '\n';
-
-  L = 2; // Used for local testing.
   cout << "L = " << L << '\n';
-  cout << "alpha = " << alpha << '\n';
-  cout << "Using K = " << K << '\n';
+  /* cout << "alpha = " << alpha << '\n'; */
+  cout << "Using h = " << h << '\n';
 
   uint8_t tag_size = 2; // Tag size in bits.
   uint64_t partitions = (pow(2, tag_size));
-  uint64_t sigs_row_count = (pow(2, (2 * K) - tag_size));
+  uint64_t sigs_row_count = (pow(2, (2 * h) - tag_size));
+  uint64_t sigs_col_count = SIGS_COL_COUNT;
 
   // Allocate signature array.
   uint32_t *sigs_arr;
-  uint64_t sigs_arr_size = sigs_row_count * SIGS_COL_COUNT * partitions * L;
+  uint64_t sigs_arr_size = sigs_row_count * sigs_col_count * partitions * L;
 
   try {
     sigs_arr = new uint32_t[sigs_arr_size];
@@ -203,7 +198,7 @@ int main(int argc, char *argv[]) {
 
   // Allocate tag array.
   int8_t *tag_arr;
-  uint64_t tag_arr_size = sigs_row_count * SIGS_COL_COUNT * partitions * L;
+  uint64_t tag_arr_size = sigs_row_count * sigs_col_count * partitions * L;
 
   try {
     tag_arr = new int8_t[tag_arr_size];
@@ -213,7 +208,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* Initialize tag array to -1. */
-  // for (uint64_t j = 0; j < sigs_row_count * SIGS_COL_COUNT * partitions * L;
+  // for (uint64_t j = 0; j < sigs_row_count * sigs_col_count * partitions * L;
   //      j++) {
   //   tag_arr[j] = -1;
   // }
@@ -274,9 +269,9 @@ int main(int argc, char *argv[]) {
   }
 
   // Generate mask.
-  uint64_t l, k, n;
+  uint64_t l, m, n;
   uint64_t included_kmers_counter[L];
-  vector<vector<int>> positions(L, vector<int>(K));
+  vector<vector<int>> positions(L, vector<int>(h));
 
   srand(time(NULL));
 
@@ -286,10 +281,10 @@ int main(int argc, char *argv[]) {
     // Initialize lost k-mers array.
     included_kmers_counter[l] = 0;
 
-    for (k = 0; k < K; k++) {
-      n = rand() % int(SL);
+    for (m = 0; m < h; m++) {
+      n = rand() % k;
       if (count(rand_num.begin(), rand_num.end(), n)) {
-        k -= 1;
+        m -= 1;
       } else {
         rand_num.push_back(n);
       }
@@ -297,11 +292,11 @@ int main(int argc, char *argv[]) {
 
     cout << "Positions for l = " << l << " >> ";
     sort(rand_num.begin(), rand_num.end(), std::greater<int>());
-    for (int j = 0; j < K; j++) {
+    for (int j = 0; j < (h - 1); j++) {
       positions[l][j] = rand_num[j];
       cout << positions[l][j] << ", ";
     }
-    cout << endl;
+    cout << positions[l][h - 1] << endl;
 
     rand_num.clear();
   }
@@ -316,7 +311,7 @@ int main(int argc, char *argv[]) {
     int lp = 31;
     int jp = 0;
 
-    for (int p = 0; p < K; p++) {
+    for (int p = 0; p < h; p++) {
       if (p == 0) {
         v.push_back((lp - positions[l][p]) * 2);
         lp = positions[l][p];
@@ -362,7 +357,7 @@ int main(int argc, char *argv[]) {
     tag_mask += (pow(2, i)); // 111 if tag = 3
   }
   uint64_t big_sig_mask = 0;
-  for (int i = 0; i < ((2 * K) - tag_size); i++) {
+  for (int i = 0; i < ((2 * h) - tag_size); i++) {
     big_sig_mask += (pow(2, i));
   }
 
@@ -392,44 +387,35 @@ int main(int argc, char *argv[]) {
 
         // Get first 2 bits of signature (effectively bits 28 - 27) of 32 bit
         // encoding as tag.
-        tag = (sig_hash >> ((2 * K) - tag_size)) & tag_mask;
+        tag = (sig_hash >> ((2 * h) - tag_size)) & tag_mask;
 
         // Get last 26 bits of signature (effectively bits 26 - 1 ) of 32 bit
         // encoding as sigs row number.
         big_sig_hash = sig_hash & big_sig_mask;
 
+        uint64_t tmp_idx =
+            (sigs_row_count * sigs_col_count * partitions * l) +
+            (big_sig_hash * sigs_col_count * partitions) +
+            sigs_indicator_arr[sigs_row_count * l + big_sig_hash];
+
         // Check is row space is available for forward k-mer.
         if (sigs_indicator_arr[sigs_row_count * l + big_sig_hash] <
-            ((uint64_t)SIGS_COL_COUNT) * partitions) {
+            sigs_col_count * partitions) {
           // Populate tag array.
-          tag_arr[sigs_row_count * ((uint64_t)SIGS_COL_COUNT) * partitions * l +
-                  big_sig_hash * ((uint64_t)SIGS_COL_COUNT) * partitions +
-                  sigs_indicator_arr[sigs_row_count * l + big_sig_hash]] = tag;
+          tag_arr[tmp_idx] = tag;
 
           if (enc_array_ind == 0) { // First letter is either A or C.
             // Populate sigs array.
-            sigs_arr[sigs_row_count * ((uint64_t)SIGS_COL_COUNT) * partitions *
-                         l +
-                     big_sig_hash * ((uint64_t)SIGS_COL_COUNT) * partitions +
-                     sigs_indicator_arr[sigs_row_count * l + big_sig_hash]] =
-                encli_0;
+            sigs_arr[tmp_idx] = encli_0;
 
           } else if (enc_array_ind == 1) // First letter is either G or T.
           {
             // Populate sigs array.
-            sigs_arr[sigs_row_count * ((uint64_t)SIGS_COL_COUNT) * partitions *
-                         l +
-                     big_sig_hash * ((uint64_t)SIGS_COL_COUNT) * partitions +
-                     sigs_indicator_arr[sigs_row_count * l + big_sig_hash]] =
-                encli_1;
+            sigs_arr[tmp_idx] = encli_1;
           }
 
           // Populate enc array id array.
-          enc_arr_id[sigs_row_count * ((uint64_t)SIGS_COL_COUNT) * partitions *
-                         l +
-                     big_sig_hash * ((uint64_t)SIGS_COL_COUNT) * partitions +
-                     sigs_indicator_arr[sigs_row_count * l + big_sig_hash]] =
-              enc_array_ind;
+          enc_arr_id[tmp_idx] = enc_array_ind;
 
           // Increment indicator array.
           sigs_indicator_arr[sigs_row_count * l + big_sig_hash] += 1;
@@ -505,18 +491,12 @@ int main(int argc, char *argv[]) {
 
         // Storing the respective array elements in pairs.
         for (uint64_t i = 0; i < n; i++) {
-          int8_t tag_val =
-              tag_arr[sigs_row_count * ((uint64_t)SIGS_COL_COUNT) * partitions *
-                          l +
-                      j * ((uint64_t)SIGS_COL_COUNT) * partitions + i];
-          uint32_t sig_val =
-              sigs_arr[sigs_row_count * ((uint64_t)SIGS_COL_COUNT) *
-                           partitions * l +
-                       j * ((uint64_t)SIGS_COL_COUNT) * partitions + i];
-          uint8_t encoding_id =
-              enc_arr_id[sigs_row_count * ((uint64_t)SIGS_COL_COUNT) *
-                             partitions * l +
-                         j * ((uint64_t)SIGS_COL_COUNT) * partitions + i];
+          uint64_t tmp_idx =
+              (sigs_row_count * sigs_col_count * partitions * l) +
+              (j * sigs_col_count * partitions) + i;
+          int8_t tag_val = tag_arr[tmp_idx];
+          uint32_t sig_val = sigs_arr[tmp_idx];
+          uint8_t encoding_id = enc_arr_id[tmp_idx];
 
           pairt.push_back(make_tuple(tag_val, sig_val, encoding_id));
           tag_col_count[tag_val] += 1;
@@ -526,27 +506,22 @@ int main(int argc, char *argv[]) {
 
         // Update new_tag_array.
         for (uint64_t r = 0; r < partitions; r++) {
+          uint64_t tmp_idx =
+              (sigs_row_count * partitions * l) + (j * partitions) + r;
           if (r == 0) {
-            new_tag_arr[sigs_row_count * partitions * l + j * partitions + r] =
-                tag_col_count[r];
+            new_tag_arr[tmp_idx] = tag_col_count[r];
           } else {
-            new_tag_arr[sigs_row_count * partitions * l + j * partitions + r] =
-                new_tag_arr[sigs_row_count * partitions * l + j * partitions +
-                            r - 1] +
-                tag_col_count[r];
+            new_tag_arr[tmp_idx] = new_tag_arr[tmp_idx - 1] + tag_col_count[r];
           }
         }
 
         // Modifying original sig array.
         for (uint64_t i = 0; i < n; i++) {
-          sigs_arr[sigs_row_count * ((uint64_t)SIGS_COL_COUNT) * partitions *
-                       l +
-                   j * ((uint64_t)SIGS_COL_COUNT) * partitions + i] =
-              get<1>(pairt[i]);
-          enc_arr_id[sigs_row_count * ((uint64_t)SIGS_COL_COUNT) * partitions *
-                         l +
-                     j * ((uint64_t)SIGS_COL_COUNT) * partitions + i] =
-              get<2>(pairt[i]);
+          uint64_t tmp_idx =
+              (sigs_row_count * sigs_col_count * partitions * l) +
+              (j * sigs_col_count * partitions) + i;
+          sigs_arr[tmp_idx] = get<1>(pairt[i]);
+          enc_arr_id[tmp_idx] = get<2>(pairt[i]);
         }
       }
     }
@@ -575,11 +550,10 @@ int main(int argc, char *argv[]) {
   }
 
   // Write metadata file.
-  // Write p, L, alpha, K values.
+  // Write p, L, h values.
   fwrite(&p, sizeof(uint64_t), 1, wfmeta);
   fwrite(&L, sizeof(uint64_t), 1, wfmeta);
-  fwrite(&alpha, sizeof(float), 1, wfmeta);
-  fwrite(&K, sizeof(uint64_t), 1, wfmeta);
+  fwrite(&h, sizeof(uint64_t), 1, wfmeta);
 
   fwrite(&sigs_arr_size, sizeof(uint64_t), 1, wfmeta);
   fwrite(&new_tag_arr_size, sizeof(uint64_t), 1, wfmeta);
@@ -611,7 +585,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Write sig columns counts and  sig row count.
-  uint64_t sig_col_cnt = SIGS_COL_COUNT;
+  uint64_t sig_col_cnt = sigs_col_count;
   fwrite(&sig_col_cnt, sizeof(uint64_t), 1, wfmeta);
   fwrite(&sigs_row_count, sizeof(uint64_t), 1, wfmeta);
 
@@ -804,7 +778,7 @@ int main(int argc, char *argv[]) {
        << " seconds" << endl;
 
   // Output map information.
-  cout << "Columns = " << unsigned(SIGS_COL_COUNT) << endl;
+  cout << "Columns = " << sigs_col_count << endl;
   cout << "Partitions = " << unsigned(partitions) << endl;
   cout << "Sigs row count = " << sigs_row_count << endl;
   cout << "Tag size = " << unsigned(tag_size) << endl;
@@ -815,14 +789,14 @@ int main(int argc, char *argv[]) {
   // positions in each row are used.
 
   // Row count vector.
-  vector<uint64_t> sig_row_count_vec(SIGS_COL_COUNT * partitions + 1, 0);
+  vector<uint64_t> sig_row_count_vec(sigs_col_count * partitions + 1, 0);
 
   // Traverse indicator array to compute filled positions.
   for (int l = 0; l < L; l++) {
     for (uint64_t r = 0; r < sigs_row_count; r++) {
       sig_row_count_vec[sigs_indicator_arr[sigs_row_count * l + r]] += 1;
     }
-    for (int s = 0; s < SIGS_COL_COUNT * partitions + 1; s++) {
+    for (int s = 0; s < sigs_col_count * partitions + 1; s++) {
       cout << "l = " << l << " -- Count of rows with positions filled " << s
            << " : " << sig_row_count_vec[s];
       cout << " (" << std::fixed << std::setprecision(6)
@@ -856,7 +830,7 @@ int main(int argc, char *argv[]) {
 // Function definitions.
 
 void encodekmer(const char *s, uint64_t &b, uint64_t &b_sig) {
-  for (int i = 0; i < int(SL); i++) {
+  for (int i = 0; i < int(KMER_LENGTH); i++) {
     b = b << 1;
     b_sig = b_sig << 2;
 

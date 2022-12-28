@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
       else if (optopt == 'q')
         fprintf(stderr, "Option -%c requires an argument.\n", optopt);
       else if (isprint(optopt))
-        fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+        fprintf(stderr, "Unknown option '-%c'.\n", optopt);
       else
         fprintf(stderr, "Unknown option '%s'.\n", argv[optind - 1]);
       return 1;
@@ -159,7 +159,6 @@ int main(int argc, char *argv[]) {
   // Read parameters from input file.
   uint64_t p;
   uint64_t L;
-  float alpha;
   uint64_t h;
   uint64_t sigs_arr_size;
   uint64_t new_tag_arr_size;
@@ -170,7 +169,6 @@ int main(int argc, char *argv[]) {
 
   fread(&p, sizeof(uint64_t), 1, fmeta);
   fread(&L, sizeof(uint64_t), 1, fmeta);
-  fread(&alpha, sizeof(float), 1, fmeta);
   fread(&h, sizeof(uint64_t), 1, fmeta);
   fread(&sigs_arr_size, sizeof(uint64_t), 1, fmeta);
   fread(&new_tag_arr_size, sizeof(uint64_t), 1, fmeta);
@@ -182,11 +180,10 @@ int main(int argc, char *argv[]) {
   string line;
   uint64_t l;
 
-  cout << "c = " << c << endl;
-  cout << "p = " << p << '\n';
-  cout << "L = " << L << '\n';
   cout << "k = " << k << '\n';
-  cout << "alpha = " << alpha << '\n';
+  cout << "p = " << p << '\n';
+  cout << "c = " << c << endl;
+  cout << "L = " << L << '\n';
   cout << "Using h = " << h << '\n';
   cout << "k-mer count = " << kmer_count << endl;
   cout << "k-mer count array 0  = " << encli_0 << endl;
@@ -556,10 +553,6 @@ int main(int argc, char *argv[]) {
     for (uint64_t f = 0; f < file_count; f++) {
 
       string input_fq = file_list[f];
-
-      stringstream stream;
-      stream << std::fixed << std::setprecision(2) << alpha;
-      std::string alpha_s = stream.str();
 
       string input_fq_truct = input_fq.substr(input_fq.find_last_of("/") + 1);
       string output_fname_uc = "ucseq_" + input_fq_truct;
