@@ -1,15 +1,14 @@
-all: minimization map search
+all: minimize map search
 	
-minimization:
-	g++ minimization.cpp -std=c++11 -o minimization
+minimize:
+	g++ minimize.cpp -std=c++11 -o minimize
 
 map:
-	g++ main_map.cpp -std=c++11 -O3 -o main_map
-
+	g++ map.cpp -std=c++11 -O3 -o map
 
 search:
-	g++ main_search.cpp -std=c++11 -fopenmp -O3 -o main_search
+	g++ search.cpp -std=c++11 -fopenmp -O3 -o search
 
 clean:
-	rm -f ./minimization ./main_map ./main_search
+	rm -f ./minimize ./map ./search
 	@echo "Succesfully cleaned."
