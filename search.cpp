@@ -30,6 +30,10 @@
 #define VERSION 18.0
 #define KMER_LENGTH 32
 
+#define THREAD_COUNT_OPT 0
+#define SAVE_DISTANCES_OPT 's'
+#define CLASSIFIY_READS_OPT 'c'
+
 using namespace std;
 
 // Prototypes.
@@ -58,7 +62,10 @@ int main(int argc, char *argv[]) {
   string input_library_dir = string();
   string query_fastq_file = string();
   string output_dir = ".";
-  uint64_t c_value = 1;
+
+  uint64_t k = KMER_LENGTH;
+  /* Defaults. */
+  uint64_t c = 1;
   uint8_t thread_count = 1;
 
   bool save_distances = false;
@@ -69,15 +76,18 @@ int main(int argc, char *argv[]) {
 
   while (1) {
     static struct option long_options[] = {
-        {"input-library-dir", 1, 0, 'i'}, {"output-dir", 1, 0, 'o'},
-        {"query-fastq-file", 1, 0, 'q'},  {"c-value", 1, 0, 'c'},
-        {"thread-count", 1, 0, 't'},      {"save-distances", 0, 0, 'd'},
-        {"classify-reads", 0, 0, 'r'},    {0, 0, 0, 0},
+        {"input-library-dir", 1, 0, 'i'},
+        {"output-dir", 1, 0, 'o'},
+        {"query-fastq-file", 1, 0, 'q'},
+        {"c-value", 1, 0, 'c'},
+        {"thread-count", 1, 0, THREAD_COUNT_OPT},
+        {"save-distances", 0, 0, SAVE_DISTANCES_OPT},
+        {"classify-reads", 0, 0, CLASSIFIY_READS_OPT},
+        {0, 0, 0, 0},
     };
 
     int option_index = 0;
-    cf_tmp =
-        getopt_long(argc, argv, "i:o:q:c:t:dr", long_options, &option_index);
+    cf_tmp = getopt_long(argc, argv, "i:o:q:c:", long_options, &option_index);
 
     if ((optarg != NULL) && (*optarg == '-')) {
       cf_tmp = ':';
@@ -85,56 +95,58 @@ int main(int argc, char *argv[]) {
 
     if (cf_tmp == -1)
       break;
-    switch (cf_tmp) {
-    case 'i':
-      input_library_dir = optarg;
-      break;
-    case 'o':
-      output_dir = optarg;
-      break;
-    case 'c':
-      c_value = max(atoi(optarg), 1); // Default is 1.
-      break;
-    case 't':
-      thread_count = max(atoi(optarg), 1); // Default is 1.
-      break;
-    case 'q':
-      query_fastq_file = optarg;
-      break;
-    case 'd':
+    else if (cf_tmp == SAVE_DISTANCES_OPT)
       save_distances = true;
-      break;
-    case 'r':
+    else if (cf_tmp == CLASSIFIY_READS_OPT)
       classify_reads = true;
-      break;
-    case ':':
-      printf("Missing option for '-%s'.\n", argv[optind - 2]);
-      if (long_options[option_index].has_arg == 1) {
+    else if (cf_tmp == THREAD_COUNT_OPT)
+      thread_count = max(atoi(optarg), 1); // Default is 1.
+    else {
+      switch (cf_tmp) {
+      case 'i':
+        input_library_dir = optarg;
+        break;
+      case 'o':
+        output_dir = optarg;
+        break;
+      case 'q':
+        query_fastq_file = optarg;
+        break;
+      case 'c':
+        c = max(atoi(optarg), 1); // Default is 1.
+        break;
+      case ':':
+        printf("Missing option for '-%s'.\n", argv[optind - 2]);
+        if (long_options[option_index].has_arg == 1) {
+          return 1;
+        }
+        break;
+      case '?':
+        if (optopt == 'i')
+          fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+        else if (optopt == 'q')
+          fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+        else if (isprint(optopt))
+          fprintf(stderr, "Unknown option '-%c'.\n", optopt);
+        else
+          fprintf(stderr, "Unknown option '%s'.\n", argv[optind - 1]);
         return 1;
+      default:
+        abort();
       }
-      break;
-    case '?':
-      if (optopt == 'i')
-        fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-      else if (optopt == 'q')
-        fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-      else if (isprint(optopt))
-        fprintf(stderr, "Unknown option '-%c'.\n", optopt);
-      else
-        fprintf(stderr, "Unknown option '%s'.\n", argv[optind - 1]);
-      return 1;
-    default:
-      abort();
     }
   }
+
+  size_t endpos = input_library_dir.find_last_not_of("/\\");
+  input_library_dir = input_library_dir.substr(0, endpos + 1);
 
   if (argc <= 13) {
     cout << "-- Arguments supplied are;" << endl;
     cout << "Library directory : " << input_library_dir << endl;
     cout << "Query directory : " << query_fastq_file << endl;
-    cout << "Threads : " << thread_count << endl;
+    cout << "Threads : " << (int)thread_count << endl;
 
-  } else if (argc > 13) {
+  } else {
     printf("Too many arguments are supplied.\n");
     exit(0);
   }
@@ -156,11 +168,9 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  uint64_t k = KMER_LENGTH;
-  uint64_t c = c_value;
   // Read parameters from input file.
   uint64_t p;
-  uint64_t L;
+  uint64_t l;
   uint64_t h;
   uint64_t sigs_arr_size;
   uint64_t new_tag_arr_size;
@@ -170,7 +180,7 @@ int main(int argc, char *argv[]) {
   uint64_t enc_arr_id_size;
 
   fread(&p, sizeof(uint64_t), 1, fmeta);
-  fread(&L, sizeof(uint64_t), 1, fmeta);
+  fread(&l, sizeof(uint64_t), 1, fmeta);
   fread(&h, sizeof(uint64_t), 1, fmeta);
   fread(&sigs_arr_size, sizeof(uint64_t), 1, fmeta);
   fread(&new_tag_arr_size, sizeof(uint64_t), 1, fmeta);
@@ -179,13 +189,10 @@ int main(int argc, char *argv[]) {
   fread(&encli_1, sizeof(uint64_t), 1, fmeta);
   fread(&enc_arr_id_size, sizeof(uint64_t), 1, fmeta);
 
-  string line;
-  uint64_t l;
-
   cout << "k = " << k << '\n';
   cout << "p = " << p << '\n';
   cout << "c = " << c << endl;
-  cout << "L = " << L << '\n';
+  cout << "l = " << l << '\n';
   cout << "Using h = " << h << '\n';
   cout << "k-mer count = " << kmer_count << endl;
   cout << "k-mer count array 0  = " << encli_0 << endl;
@@ -198,7 +205,9 @@ int main(int argc, char *argv[]) {
   vector<vector<int8_t>> shifts;
   vector<vector<int8_t>> grab_bits;
 
-  for (l = 0; l < L; l++) {
+  string line;
+
+  for (int i = 0; i < l; i++) {
     int8_t val_read;
     vector<int8_t> v;
     vector<int8_t> g;
@@ -533,12 +542,17 @@ int main(int argc, char *argv[]) {
        << chrono::duration_cast<chrono::seconds>(end - start).count()
        << " seconds" << endl;
 
+  string library_name =
+      input_library_dir.substr(input_library_dir.find_last_of("/\\") + 1);
+
   string query_fastq_truct =
       query_fastq_file.substr(query_fastq_file.find_last_of("/") + 1);
   query_fastq_truct =
       query_fastq_truct.substr(0, query_fastq_truct.find_last_of("."));
-  string output_uc_path = output_dir + "/" + "ucseq_" + query_fastq_truct;
-  string output_dist_path = output_dir + "/" + "dist_" + query_fastq_truct;
+  string output_uc_path =
+      output_dir + "/" + library_name + +"_ucseq_" + query_fastq_truct;
+  string output_dist_path =
+      output_dir + "/" + library_name + "_dist_" + query_fastq_truct;
 
   // Read input fastq.
   ifstream ifs_reads(query_fastq_file);
@@ -608,7 +622,7 @@ int main(int argc, char *argv[]) {
             bool exact_match = false;
             uint8_t min_dist = KMER_LENGTH;
 
-            for (int64_t funci = 0; funci < L; funci++) {
+            for (int64_t funci = 0; funci < l; funci++) {
               kmer_sig =
                   encodekmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 
@@ -711,7 +725,7 @@ int main(int argc, char *argv[]) {
               bool exact_match = false;
               uint8_t min_dist = KMER_LENGTH;
 
-              for (uint64_t funci = 0; funci < L; funci++) {
+              for (uint64_t funci = 0; funci < l; funci++) {
                 kmer_sig =
                     encodekmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 

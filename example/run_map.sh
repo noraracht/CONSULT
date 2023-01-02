@@ -3,8 +3,8 @@ echo "EXAMPLE: RUN MAP"
 echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
 echo "===COMPILING==="
 echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
-make clean -C
-make map -C
+make clean -C ..
+make map -C ..
 
 echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
 echo "===MAPPING==="
@@ -13,4 +13,8 @@ echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
 ../map \
   -i "k32C_af_mininimization.fa" \
   -o "G000307305_nbr_mapping" \
-  -p 3
+  -p 3 \
+  -l 2 \
+  -h 15 \
+  -t 2  \
+  --column-count 7

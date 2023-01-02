@@ -11,7 +11,8 @@ echo "===SEARCHING==="
 echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
 ../search \
   -q "G000307305.fq" \
-  -i "G000307305_nbr_map" \
+  -i "G000307305_nbr_mapping" \
   -o "." \
-  -c 1 -t 1 \
+  -c 1 \
+  --thread-count 1 \
   --classify-reads --save-distances

@@ -20,7 +20,11 @@ echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
 ../map \
   -i "k32C_af_mininimization.fa" \
   -o "G000307305_nbr_mapping" \
-  -p "3"
+  -p 3 \
+  -l 2 \
+  -h 15 \
+  -t 2  \
+  --column-count 7
 
 echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
 echo "===SEARCHING==="
@@ -29,5 +33,6 @@ echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
   -q "G000307305.fq" \
   -i "G000307305_nbr_mapping" \
   -o "." \
-  -c 1 -t 1 \
+  -c 1 \
+  --thread-count 1 \
   --classify-reads --save-distances

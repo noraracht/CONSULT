@@ -33,11 +33,11 @@
 #define VERSION 17.1
 #define KMER_LENGTH 32
 
-#define SIGS_COL_COUNT 7
-
 #define SIGF_CHUNKS 24
 #define TAGF_CHUNKS 24
 #define ENCF_CHUNKS 24
+
+#define COLUMN_COUNT_OPT 0
 
 using namespace std;
 
@@ -59,7 +59,20 @@ int main(int argc, char *argv[]) {
 
   string input_fasta_file = string();
   string output_library_dir = string();
-  uint64_t p_value = 3;
+
+  uint16_t k = KMER_LENGTH;
+  /* Defaults */
+  uint64_t p = 3;
+  uint64_t l = 2;
+  uint64_t h = 15;
+  /* float alpha = 0.95; // This is just to determine correct h value. */
+  /* uint64_t h = round(log(1 - (pow((1 - alpha), (1 / float(l))))) / */
+  /*                    log(1 - float(p) / float(k))); */
+
+  uint8_t t = 2;                                 // Tag size in bits.
+  uint64_t partitions = pow(2, t);               // # of partitions; 2^(t)
+  uint64_t sigs_col_count = 7;                   // # of columns; partitions * b
+  uint64_t sigs_row_count = pow(2, (2 * h) - t); // # of rows; 2^(2h-t)
 
   int cf_tmp;
   opterr = 0;
@@ -69,11 +82,16 @@ int main(int argc, char *argv[]) {
         {"input-fasta-file", 1, 0, 'i'},
         {"output-library-directory", 1, 0, 'o'},
         {"p-value", 1, 0, 'p'},
+        {"l-value", 1, 0, 'l'},
+        {"h-value", 1, 0, 'h'},
+        {"t-value", 1, 0, 't'},
+        {"column-count", 1, 0, COLUMN_COUNT_OPT},
         {0, 0, 0, 0},
     };
 
     int option_index = 0;
-    cf_tmp = getopt_long(argc, argv, "i:o:p:", long_options, &option_index);
+    cf_tmp =
+        getopt_long(argc, argv, "i:o:p:l:h:t:", long_options, &option_index);
 
     if ((optarg != NULL) && (*optarg == '-')) {
       cf_tmp = ':';
@@ -89,7 +107,19 @@ int main(int argc, char *argv[]) {
       output_library_dir = optarg;
       break;
     case 'p':
-      p_value = atoi(optarg); // Default value is 3.
+      p = atoi(optarg); // Default value is 3.
+      break;
+    case 'l':
+      l = atoi(optarg); // Default value is 2.
+      break;
+    case 'h':
+      h = atoi(optarg); // Default value is 15.
+      break;
+    case 't':
+      t = atoi(optarg); // Default value is 2.
+      break;
+    case COLUMN_COUNT_OPT:
+      sigs_col_count = atoi(optarg); // Default value is7.
       break;
     case ':':
       printf("Missing option for '-%s'.\n", argv[optind - 2]);
@@ -114,7 +144,7 @@ int main(int argc, char *argv[]) {
 
   uint64_t kmer_count = 0;
 
-  if (argc <= 7) {
+  if (argc <= 15) {
     cout << "-- Arguments supplied are;" << endl;
     cout << "Input file : " << input_fasta_file << endl;
     cout << "Library directory : " << output_library_dir << endl;
@@ -132,7 +162,7 @@ int main(int argc, char *argv[]) {
       kmer_count += count_lines(buff, cc);
     }
     ifs.close();
-  } else if (argc > 7) {
+  } else {
     printf("Too many arguments are supplied.\n");
     exit(0);
   }
@@ -143,29 +173,16 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
-  uint8_t k = KMER_LENGTH;
-  uint64_t p = p_value;
-  uint64_t L = 2;
-  /* float alpha = 0.95; // This is just to determine correct h value. */
-  uint64_t h = 15;
-  /* h = round(log(1 - (pow((1 - alpha), (1 / float(L))))) / */
-  /*           log(1 - float(p) / float(k))); */
-
   cout << "k-mer count = " << kmer_count << endl;
   cout << "k = " << k << '\n';
   cout << "p = " << p << '\n';
-  cout << "L = " << L << '\n';
-  /* cout << "alpha = " << alpha << '\n'; */
+  cout << "l = " << l << '\n';
   cout << "Using h = " << h << '\n';
-
-  uint8_t tag_size = 2; // Tag size in bits.
-  uint64_t partitions = (pow(2, tag_size));
-  uint64_t sigs_row_count = (pow(2, (2 * h) - tag_size));
-  uint64_t sigs_col_count = SIGS_COL_COUNT;
+  /* cout << "alpha = " << alpha << '\n'; */
 
   // Allocate signature array.
   uint32_t *sigs_arr;
-  uint64_t sigs_arr_size = sigs_row_count * sigs_col_count * partitions * L;
+  uint64_t sigs_arr_size = sigs_row_count * sigs_col_count * partitions * l;
 
   try {
     sigs_arr = new uint32_t[sigs_arr_size];
@@ -176,7 +193,7 @@ int main(int argc, char *argv[]) {
 
   // Allocate sigs indicator array.
   uint8_t *sigs_indicator_arr;
-  uint64_t sigs_indicator_arr_size = sigs_row_count * L;
+  uint64_t sigs_indicator_arr_size = sigs_row_count * l;
 
   try {
     sigs_indicator_arr = new uint8_t[sigs_indicator_arr_size];
@@ -192,7 +209,7 @@ int main(int argc, char *argv[]) {
 
   // Allocate tag array.
   int8_t *tag_arr;
-  uint64_t tag_arr_size = sigs_row_count * sigs_col_count * partitions * L;
+  uint64_t tag_arr_size = sigs_row_count * sigs_col_count * partitions * l;
 
   try {
     tag_arr = new int8_t[tag_arr_size];
@@ -202,7 +219,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* Initialize tag array to -1. */
-  // for (uint64_t j = 0; j < sigs_row_count * sigs_col_count * partitions * L;
+  // for (uint64_t j = 0; j < sigs_row_count * sigs_col_count * partitions * l;
   //      j++) {
   //   tag_arr[j] = -1;
   // }
@@ -260,17 +277,17 @@ int main(int argc, char *argv[]) {
   }
 
   // Generate mask.
-  uint64_t l, m, n;
-  uint64_t included_kmers_counter[L];
-  vector<vector<int>> positions(L, vector<int>(h));
+  uint64_t m, n;
+  uint64_t included_kmers_counter[l];
+  vector<vector<int>> positions(l, vector<int>(h));
 
   srand(time(NULL));
 
-  for (l = 0; l < L; l++) {
+  for (int i = 0; i < l; i++) {
     vector<int> rand_num;
 
     // Initialize lost k-mers array.
-    included_kmers_counter[l] = 0;
+    included_kmers_counter[i] = 0;
 
     for (m = 0; m < h; m++) {
       n = rand() % k;
@@ -281,13 +298,13 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    cout << "Positions for l = " << l << " >> ";
+    cout << "Positions for l = " << i << " >> ";
     sort(rand_num.begin(), rand_num.end(), std::greater<int>());
     for (int j = 0; j < (h - 1); j++) {
-      positions[l][j] = rand_num[j];
-      cout << positions[l][j] << ", ";
+      positions[i][j] = rand_num[j];
+      cout << positions[i][j] << ", ";
     }
-    cout << positions[l][h - 1] << endl;
+    cout << positions[i][h - 1] << endl;
 
     rand_num.clear();
   }
@@ -295,22 +312,22 @@ int main(int argc, char *argv[]) {
   vector<vector<int8_t>> shifts;
   vector<vector<int8_t>> grab_bits;
 
-  for (l = 0; l < L; l++) {
+  for (int i = 0; i < l; i++) {
     // Construct a vector of integers.
     vector<int8_t> v;
     vector<int8_t> g;
     int lp = 31;
     int jp = 0;
 
-    for (int p = 0; p < h; p++) {
-      if (p == 0) {
-        v.push_back((lp - positions[l][p]) * 2);
-        lp = positions[l][p];
+    for (int j = 0; j < h; j++) {
+      if (j == 0) {
+        v.push_back((lp - positions[i][j]) * 2);
+        lp = positions[i][j];
         jp += 2;
 
-      } else if (positions[l][p - 1] - positions[l][p] != 1) {
-        v.push_back((lp - positions[l][p]) * 2);
-        lp = positions[l][p];
+      } else if (positions[i][j - 1] - positions[i][j] != 1) {
+        v.push_back((lp - positions[i][j]) * 2);
+        lp = positions[i][j];
         g.push_back(jp);
         jp = 2;
       } else {
@@ -344,11 +361,11 @@ int main(int argc, char *argv[]) {
 
   // Compute mask values.
   uint64_t tag_mask = 0;
-  for (int i = 0; i < tag_size; i++) {
+  for (int i = 0; i < t; i++) {
     tag_mask += (pow(2, i)); // 111 if tag = 3
   }
   uint64_t big_sig_mask = 0;
-  for (int i = 0; i < ((2 * h) - tag_size); i++) {
+  for (int i = 0; i < ((2 * h) - t); i++) {
     big_sig_mask += (pow(2, i));
   }
 
@@ -373,24 +390,24 @@ int main(int argc, char *argv[]) {
         break;
       }
 
-      for (l = 0; l < L; l++) {
-        sig_hash = encodekmer_bits(b_sig, shifts[l], grab_bits[l]);
+      for (int i = 0; i < l; i++) {
+        sig_hash = encodekmer_bits(b_sig, shifts[i], grab_bits[i]);
 
         // Get first 2 bits of signature (effectively bits 28 - 27) of 32 bit
         // encoding as tag.
-        tag = (sig_hash >> ((2 * h) - tag_size)) & tag_mask;
+        tag = (sig_hash >> ((2 * h) - t)) & tag_mask;
 
         // Get last 26 bits of signature (effectively bits 26 - 1 ) of 32 bit
         // encoding as sigs row number.
         big_sig_hash = sig_hash & big_sig_mask;
 
         uint64_t tmp_idx =
-            (sigs_row_count * sigs_col_count * partitions * l) +
+            (sigs_row_count * sigs_col_count * partitions * i) +
             (big_sig_hash * sigs_col_count * partitions) +
-            sigs_indicator_arr[sigs_row_count * l + big_sig_hash];
+            sigs_indicator_arr[sigs_row_count * i + big_sig_hash];
 
         // Check is row space is available for forward k-mer.
-        if (sigs_indicator_arr[sigs_row_count * l + big_sig_hash] <
+        if (sigs_indicator_arr[sigs_row_count * i + big_sig_hash] <
             sigs_col_count * partitions) {
           // Populate tag array.
           tag_arr[tmp_idx] = tag;
@@ -409,10 +426,10 @@ int main(int argc, char *argv[]) {
           enc_arr_id[tmp_idx] = enc_array_ind;
 
           // Increment indicator array.
-          sigs_indicator_arr[sigs_row_count * l + big_sig_hash] += 1;
+          sigs_indicator_arr[sigs_row_count * i + big_sig_hash] += 1;
 
           // Increment k-mer counter.
-          included_kmers_counter[l] += 1;
+          included_kmers_counter[i] += 1;
 
           kmer_written = true;
         }
@@ -444,7 +461,7 @@ int main(int argc, char *argv[]) {
 
   // Allocate new tag array.
   int8_t *new_tag_arr;
-  uint64_t new_tag_arr_size = sigs_row_count * partitions * L;
+  uint64_t new_tag_arr_size = sigs_row_count * partitions * l;
 
   try {
     new_tag_arr = new int8_t[new_tag_arr_size];
@@ -472,19 +489,19 @@ int main(int argc, char *argv[]) {
 
   // Sort sigs and tag arrays.
   // Sort uint32_t array b[] according to the order defined by a[].
-  for (l = 0; l < L; l++) {
+  for (int i = 0; i < l; i++) {
     for (uint64_t j = 0; j < sigs_row_count; j++) {
-      if (sigs_indicator_arr[sigs_row_count * l + j] > 0) {
+      if (sigs_indicator_arr[sigs_row_count * i + j] > 0) {
         vector<int8_t> tag_col_count(partitions, 0);
-        uint8_t n = sigs_indicator_arr[sigs_row_count * l + j];
+        uint8_t n = sigs_indicator_arr[sigs_row_count * i + j];
 
         vector<tuple<int8_t, uint32_t, uint8_t>> pairt;
 
         // Storing the respective array elements in pairs.
-        for (uint64_t i = 0; i < n; i++) {
+        for (uint64_t k = 0; k < n; k++) {
           uint64_t tmp_idx =
-              (sigs_row_count * sigs_col_count * partitions * l) +
-              (j * sigs_col_count * partitions) + i;
+              (sigs_row_count * sigs_col_count * partitions * i) +
+              (j * sigs_col_count * partitions) + k;
           int8_t tag_val = tag_arr[tmp_idx];
           uint32_t sig_val = sigs_arr[tmp_idx];
           uint8_t encoding_id = enc_arr_id[tmp_idx];
@@ -498,7 +515,7 @@ int main(int argc, char *argv[]) {
         // Update new_tag_array.
         for (uint64_t r = 0; r < partitions; r++) {
           uint64_t tmp_idx =
-              (sigs_row_count * partitions * l) + (j * partitions) + r;
+              (sigs_row_count * partitions * i) + (j * partitions) + r;
           if (r == 0) {
             new_tag_arr[tmp_idx] = tag_col_count[r];
           } else {
@@ -507,12 +524,12 @@ int main(int argc, char *argv[]) {
         }
 
         // Modifying original sig array.
-        for (uint64_t i = 0; i < n; i++) {
+        for (uint64_t k = 0; k < n; k++) {
           uint64_t tmp_idx =
-              (sigs_row_count * sigs_col_count * partitions * l) +
-              (j * sigs_col_count * partitions) + i;
-          sigs_arr[tmp_idx] = get<1>(pairt[i]);
-          enc_arr_id[tmp_idx] = get<2>(pairt[i]);
+              (sigs_row_count * sigs_col_count * partitions * i) +
+              (j * sigs_col_count * partitions) + k;
+          sigs_arr[tmp_idx] = get<1>(pairt[k]);
+          enc_arr_id[tmp_idx] = get<2>(pairt[k]);
         }
       }
     }
@@ -541,9 +558,9 @@ int main(int argc, char *argv[]) {
   }
 
   // Write metadata file.
-  // Write p, L, h values.
+  // Write p, l, h values.
   fwrite(&p, sizeof(uint64_t), 1, wfmeta);
-  fwrite(&L, sizeof(uint64_t), 1, wfmeta);
+  fwrite(&l, sizeof(uint64_t), 1, wfmeta);
   fwrite(&h, sizeof(uint64_t), 1, wfmeta);
 
   fwrite(&sigs_arr_size, sizeof(uint64_t), 1, wfmeta);
@@ -560,18 +577,18 @@ int main(int argc, char *argv[]) {
   fwrite(&new_encid_arr_size, sizeof(uint64_t), 1, wfmeta);
 
   // Write mask array and output real count k-mers included in DB.
-  for (l = 0; l < L; l++) {
-    cout << "k-mers included l = " << l << " >> " << included_kmers_counter[l]
+  for (int i = 0; i < l; i++) {
+    cout << "k-mers included l = " << i << " >> " << included_kmers_counter[i]
          << endl;
 
-    int size = shifts[l].size();
+    int size = shifts[i].size();
     fwrite(&size, sizeof(int8_t), 1, wfmeta);
 
     for (int s = 0; s < size; s++) {
-      fwrite(&shifts[l][s], sizeof(int8_t), 1, wfmeta);
+      fwrite(&shifts[i][s], sizeof(int8_t), 1, wfmeta);
     }
     for (int s = 0; s < size; s++) {
-      fwrite(&grab_bits[l][s], sizeof(int8_t), 1, wfmeta);
+      fwrite(&grab_bits[i][s], sizeof(int8_t), 1, wfmeta);
     }
   }
 
@@ -581,7 +598,7 @@ int main(int argc, char *argv[]) {
   fwrite(&sigs_row_count, sizeof(uint64_t), 1, wfmeta);
 
   // Write tag size, partition count, tag mask and big_sig_mask.
-  fwrite(&tag_size, sizeof(uint64_t), 1, wfmeta);
+  fwrite(&t, sizeof(uint64_t), 1, wfmeta);
   fwrite(&partitions, sizeof(uint64_t), 1, wfmeta);
   fwrite(&tag_mask, sizeof(uint64_t), 1, wfmeta);
   fwrite(&big_sig_mask, sizeof(uint64_t), 1, wfmeta);
@@ -772,7 +789,7 @@ int main(int argc, char *argv[]) {
   cout << "Columns = " << sigs_col_count << endl;
   cout << "Partitions = " << unsigned(partitions) << endl;
   cout << "Sigs row count = " << sigs_row_count << endl;
-  cout << "Tag size = " << unsigned(tag_size) << endl;
+  cout << "Tag size = " << unsigned(t) << endl;
   cout << "Tag mask = " << unsigned(tag_mask) << endl;
   cout << "Big sig mask = " << big_sig_mask << endl;
 
@@ -783,9 +800,9 @@ int main(int argc, char *argv[]) {
   vector<uint64_t> sig_row_count_vec(sigs_col_count * partitions + 1, 0);
 
   // Traverse indicator array to compute filled positions.
-  for (int l = 0; l < L; l++) {
+  for (int i = 0; i < l; i++) {
     for (uint64_t r = 0; r < sigs_row_count; r++) {
-      sig_row_count_vec[sigs_indicator_arr[sigs_row_count * l + r]] += 1;
+      sig_row_count_vec[sigs_indicator_arr[sigs_row_count * i + r]] += 1;
     }
     for (int s = 0; s < sigs_col_count * partitions + 1; s++) {
       cout << "l = " << l << " -- Count of rows with positions filled " << s
@@ -793,7 +810,7 @@ int main(int argc, char *argv[]) {
       cout << " (" << std::fixed << std::setprecision(6)
            << (double)sig_row_count_vec[s] / sigs_row_count << ")" << endl;
     }
-    cout << "l = " << l << " -- Total populated rows : "
+    cout << "l = " << i << " -- Total populated rows : "
          << std::accumulate(sig_row_count_vec.begin(), sig_row_count_vec.end(),
                             decltype(sig_row_count_vec)::value_type(0))
          << endl;
