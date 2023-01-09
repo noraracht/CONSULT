@@ -1,38 +1,42 @@
-#include <algorithm>
-#include <chrono>
+#include <algorithm>           // for max
+#include <bits/getopt_core.h>  // for optarg, optopt, optind, opterr
+#include <bits/stdint-intn.h>  // for int64_t
+#include <bits/stdint-uintn.h> // for uint64_t, uint8_t, uint32_t, uint16_t
+#include <cassert>             // for assert
+#include <chrono>              // for seconds, duration_cast, operator-
 #include <cmath>
-#include <cstdio>
+#include <cstdint> // for int8_t
+#include <cstdio>  // for fread, fclose, fopen, fprintf, FILE
 #include <cstdlib>
-#include <cstring>
-#include <dirent.h>
+#include <ctype.h>
+#include <ctype.h>  // for isprint
+#include <dirent.h> // for closedir, dirent, opendir, readdir, DIR
 #include <fstream>
-#include <getopt.h>
-#include <iomanip>
-#include <iostream>
-#include <iterator>
-#include <map>
-#include <new>
-#include <omp.h>
+#include <getopt.h> // for getopt_long, option
+#include <iomanip>  // for operator<<, setprecision
+#include <iostream> // for operator<<, endl, basic_ostream, ostream
+#include <map>      // for map
+#include <memory>   // for allocator, allocator_traits<>::value_...
+#include <new>      // for bad_alloc
+#include <ostream>  // for operator<<
 #include <sstream>
 #include <stdio.h>
-#include <string.h>
-#include <string>
+#include <stdlib.h> // for exit, atoi, abort
+#include <string.h> // for strcmp, strlen
+#include <string>   // for string, operator+, char_traits, opera...
 #include <sys/types.h>
-#include <time.h>
-#include <unordered_map>
-#include <vector>
-
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
+#include <utility> // for pair
+#include <vector>  // for vector
 
 #define VERSION 18.0
 #define KMER_LENGTH 32
 
-#define THREAD_COUNT_OPT 0
-#define SAVE_DISTANCES_OPT 's'
-#define CLASSIFIY_READS_OPT 'c'
+#define SAVE_DISTANCES_OPT 'd'
+#define DISTANCE_THRESHOLD_OPT 'D'
+#define UNCLASSIFIED_OUT_OPT 0
+#define CLASSIFIED_OUT_OPT 1
+#define THREAD_COUNT_OPT 'T'
 
 using namespace std;
 
@@ -53,6 +57,11 @@ void update_kmer_reverse(const char *s, uint64_t &b, uint64_t &b_sig);
 void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
                     bool &kmer_found, bool &exact_match, uint8_t &num_matched);
 
+void output_reads(ofstream &ofs_reads, ifstream &ifs_reads_query,
+                  uint64_t &num_lines_read, string name, string orig_line);
+
+map<uint16_t, uint16_t> init_distance_map(uint16_t distance_threshold);
+
 int main(int argc, char *argv[]) {
   auto start = chrono::steady_clock::now();
 
@@ -67,9 +76,11 @@ int main(int argc, char *argv[]) {
   /* Defaults. */
   uint64_t c = 1;
   uint8_t thread_count = 1;
+  uint16_t distance_threshold = 0;
 
   bool save_distances = false;
-  bool classify_reads = false;
+  bool classified_out = false;
+  bool unclassified_out = true;
 
   int cf_tmp;
   opterr = 0;
@@ -82,7 +93,9 @@ int main(int argc, char *argv[]) {
         {"c-value", 1, 0, 'c'},
         {"thread-count", 1, 0, THREAD_COUNT_OPT},
         {"save-distances", 0, 0, SAVE_DISTANCES_OPT},
-        {"classify-reads", 0, 0, CLASSIFIY_READS_OPT},
+        {"distance-threshold", 1, 0, DISTANCE_THRESHOLD_OPT},
+        {"unclassified-out", 0, 0, UNCLASSIFIED_OUT_OPT},
+        {"classified-out", 0, 0, CLASSIFIED_OUT_OPT},
         {0, 0, 0, 0},
     };
 
@@ -97,8 +110,13 @@ int main(int argc, char *argv[]) {
       break;
     else if (cf_tmp == SAVE_DISTANCES_OPT)
       save_distances = true;
-    else if (cf_tmp == CLASSIFIY_READS_OPT)
-      classify_reads = true;
+    else if (cf_tmp == DISTANCE_THRESHOLD_OPT)
+      // Ignored if save_distances flag is not given.
+      distance_threshold = atoi(optarg); // Default equals to p.
+    else if (cf_tmp == CLASSIFIED_OUT_OPT)
+      classified_out = true;
+    else if (cf_tmp == UNCLASSIFIED_OUT_OPT)
+      unclassified_out = true;
     else if (cf_tmp == THREAD_COUNT_OPT)
       thread_count = max(atoi(optarg), 1); // Default is 1.
     else {
@@ -140,7 +158,7 @@ int main(int argc, char *argv[]) {
   size_t endpos = input_library_dir.find_last_not_of("/\\");
   input_library_dir = input_library_dir.substr(0, endpos + 1);
 
-  if (argc <= 13) {
+  if (argc <= 16) {
     cout << "-- Arguments supplied are;" << endl;
     cout << "Library directory : " << input_library_dir << endl;
     cout << "Query directory : " << query_fastq_file << endl;
@@ -151,10 +169,11 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
-  if (!(classify_reads || save_distances)) {
+  if (!(classified_out || unclassified_out || save_distances)) {
     cout << "Nothing to do!\n";
-    cout << "Use '-d' flag to classify reads.\n";
-    cout << "Use '-r' flag to save Hamming distances of matched k-mers.\n";
+    cout << "> '--classified-out' flag to report classified reads.\n";
+    cout << "> '--unclassified-out' flag to report unclassified reads.\n";
+    cout << "> '--save-distances' flag to save distances of matched k-mers.\n";
     return 0;
   }
 
@@ -189,10 +208,18 @@ int main(int argc, char *argv[]) {
   fread(&encli_1, sizeof(uint64_t), 1, fmeta);
   fread(&enc_arr_id_size, sizeof(uint64_t), 1, fmeta);
 
+  if (distance_threshold == 0) {
+    distance_threshold = ceil(3 * p / 2);
+  }
+  assert(distance_threshold >= 0);
+
   cout << "k = " << k << '\n';
   cout << "p = " << p << '\n';
   cout << "c = " << c << endl;
   cout << "l = " << l << '\n';
+  if (save_distances) {
+    cout << "distance_threshold = " << distance_threshold << '\n';
+  }
   cout << "Using h = " << h << '\n';
   cout << "k-mer count = " << kmer_count << endl;
   cout << "k-mer count array 0  = " << encli_0 << endl;
@@ -542,30 +569,50 @@ int main(int argc, char *argv[]) {
        << chrono::duration_cast<chrono::seconds>(end - start).count()
        << " seconds" << endl;
 
-  string library_name =
-      input_library_dir.substr(input_library_dir.find_last_of("/\\") + 1);
+  /* string library_name = */
+  /*     input_library_dir.substr(input_library_dir.find_last_of("/\\") + 1);
+   */
 
   string query_fastq_truct =
       query_fastq_file.substr(query_fastq_file.find_last_of("/") + 1);
   query_fastq_truct =
       query_fastq_truct.substr(0, query_fastq_truct.find_last_of("."));
-  string output_uc_path =
-      output_dir + "/" + library_name + +"_ucseq_" + query_fastq_truct;
-  string output_dist_path =
-      output_dir + "/" + library_name + "_dist_" + query_fastq_truct;
+  string output_unclassified_path =
+      output_dir + "/" + "unclassified-seq_" + query_fastq_truct;
+  string output_classified_path =
+      output_dir + "/" + "classified-seq_" + query_fastq_truct;
+  string output_distances_path =
+      output_dir + "/" + "kmer-distances_" + query_fastq_truct;
 
   // Read input fastq.
-  ifstream ifs_reads(query_fastq_file);
+  ifstream ifs_reads_query(query_fastq_file);
 
-  ofstream ofs_reads_uc;
-  ofstream ofs_reads_dist;
-  ofs_reads_uc.open(output_uc_path);
-  ofs_reads_dist.open(output_dist_path);
+  ofstream ofs_reads_unclassified;
+  if (unclassified_out) {
+    ofs_reads_unclassified.open(output_unclassified_path);
+  }
 
-  uint64_t lines_read = 0;
+  ofstream ofs_reads_classified;
+  if (classified_out) {
+    ofs_reads_classified.open(output_classified_path);
+  }
+
+  ofstream ofs_kmer_distances;
+  if (save_distances) {
+    ofs_kmer_distances.open(output_distances_path);
+    ofs_kmer_distances << "READ_ID"
+                       << "\t"
+                       << "SEQ_TYPE";
+    for (uint16_t i = 0; i <= distance_threshold; ++i) {
+      ofs_kmer_distances << "\t" << i;
+    }
+    ofs_kmer_distances << endl;
+  }
+
+  uint64_t num_lines_read = 0;
   uint64_t reads_matched = 0;
 
-  string line_of_file;
+  string curr_line;
   string name;
   string token;
 
@@ -581,24 +628,26 @@ int main(int argc, char *argv[]) {
   uint64_t enc_start;
   uint64_t enc_end;
 
-  while (!ifs_reads.eof()) {
-    getline(ifs_reads, line_of_file);
+  while (!ifs_reads_query.eof()) {
+    getline(ifs_reads_query, curr_line);
 
-    if (!ifs_reads)
+    if (!ifs_reads_query)
       break;
 
-    if (lines_read % 4 == 0) {
-      name = line_of_file;
-    } else if (lines_read % 4 == 1) {
+    if (num_lines_read % 4 == 0) {
+      name = curr_line;
+    } else if (num_lines_read % 4 == 1) {
       uint8_t num_matched = 0;
       uint8_t num_matched_reverse = 0;
 
-      vector<uint8_t> min_distances;
-      vector<uint8_t> min_distances_reverse;
+      map<uint16_t, uint16_t> min_distances =
+          init_distance_map(distance_threshold);
+      map<uint16_t, uint16_t> reverse_min_distances =
+          init_distance_map(distance_threshold);
 
-      string line_of_file_orig = line_of_file;
+      string orig_line = curr_line;
 
-      istringstream iss(line_of_file);
+      istringstream iss(curr_line);
 
       while (getline(iss, token, 'N')) {
         if (token.length() >= int(k)) {
@@ -679,9 +728,9 @@ int main(int argc, char *argv[]) {
             // For each k-mer.
             if ((num_matched >= c) && (!save_distances)) {
               break;
-            } else if ((min_dist < KMER_LENGTH) &&
-                       save_distances) { // (kmer_found && save_distances)
-              min_distances.push_back(min_dist);
+              /* Default is equivalent to (kmer_found && save_distances). */
+            } else if ((min_dist < distance_threshold) && save_distances) {
+              min_distances[min_dist]++;
             }
           }
         }
@@ -693,16 +742,16 @@ int main(int argc, char *argv[]) {
 
       // Try reverse complement.
       if ((num_matched < c) || save_distances) {
-        int len = strlen(line_of_file.c_str());
+        int len = strlen(curr_line.c_str());
         char swap;
 
         for (int i = 0; i < len / 2; i++) {
-          swap = line_of_file[i];
-          line_of_file[i] = line_of_file[len - i - 1];
-          line_of_file[len - i - 1] = swap;
+          swap = curr_line[i];
+          curr_line[i] = curr_line[len - i - 1];
+          curr_line[len - i - 1] = swap;
         }
 
-        istringstream iss(line_of_file);
+        istringstream iss(curr_line);
 
         while (getline(iss, token, 'N')) {
           if (token.length() >= int(k)) {
@@ -781,9 +830,9 @@ int main(int argc, char *argv[]) {
               // For each k-mer.
               if ((num_matched_reverse >= c) && (!save_distances)) {
                 break;
-              } else if ((min_dist < KMER_LENGTH) &&
-                         save_distances) { // (kmer_found && save_distances)
-                min_distances_reverse.push_back(min_dist);
+                /* Default is equivalent to (kmer_found && save_distances). */
+              } else if ((min_dist < distance_threshold) && save_distances) {
+                reverse_min_distances[min_dist]++;
               }
             }
           }
@@ -795,41 +844,48 @@ int main(int argc, char *argv[]) {
       }
 
       if (save_distances) {
-        ofs_reads_dist << name << endl;
-        stringstream result_distances;
-        stringstream result_distances_reverse;
-        copy(min_distances.begin(), min_distances.end(),
-             ostream_iterator<int>(result_distances, " "));
-        copy(min_distances_reverse.begin(), min_distances_reverse.end(),
-             ostream_iterator<int>(result_distances_reverse, " "));
-        ofs_reads_dist << ">> " << result_distances.str().c_str() << ">>"
-                       << endl;
-        ofs_reads_dist << "<< " << result_distances_reverse.str().c_str()
-                       << "<<" << endl;
+        ofs_kmer_distances << name << "\t"
+                           << "--";
+        for (pair<const int, int> keyvaluepair : min_distances) {
+          ofs_kmer_distances << "\t" << keyvaluepair.second;
+        }
+        ofs_kmer_distances << endl;
+
+        ofs_kmer_distances << name << "\t"
+                           << "rc";
+        for (pair<const int, int> keyvaluepair : reverse_min_distances) {
+          ofs_kmer_distances << "\t" << keyvaluepair.second;
+        }
+        ofs_kmer_distances << endl;
       }
 
-      if (((num_matched < c) && (num_matched_reverse < c)) && classify_reads) {
-        ofs_reads_uc << name << endl;
-        ofs_reads_uc << line_of_file_orig << endl;
-        // Output separator and quality.
-        getline(ifs_reads, line_of_file);
-        ++lines_read;
-        ofs_reads_uc << line_of_file << endl;
-        getline(ifs_reads, line_of_file);
-        ++lines_read;
-        ofs_reads_uc << line_of_file << endl;
+      if ((num_matched < c) && (num_matched_reverse < c)) {
+        if (unclassified_out) {
+          output_reads(ofs_reads_unclassified, ifs_reads_query, num_lines_read,
+                       name, orig_line);
+        }
       } else if ((num_matched >= c) || (num_matched_reverse >= c)) {
         reads_matched += 1;
+        if (classified_out) {
+          output_reads(ofs_reads_classified, ifs_reads_query, num_lines_read,
+                       name, orig_line);
+        }
       }
     }
-    ++lines_read;
+    ++num_lines_read;
   }
 
-  cout << query_fastq_file << " " << lines_read << " " << reads_matched << endl;
+  cout << query_fastq_file << " " << num_lines_read << " " << reads_matched
+       << endl;
 
-  ifs_reads.close();
-  ofs_reads_uc.close();
-  ofs_reads_dist.close();
+  ifs_reads_query.close();
+
+  if (unclassified_out)
+    ofs_reads_unclassified.close();
+  if (classified_out)
+    ofs_reads_classified.close();
+  if (save_distances)
+    ofs_kmer_distances.close();
 
   // Remember to delete array when it is done.
   delete[] sigs_arr;
@@ -1012,4 +1068,26 @@ void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
     min_dist = dist;
   }
   exact_match = dist == 0;
+}
+
+void output_reads(ofstream &ofs_reads, ifstream &ifs_reads_query,
+                  uint64_t &num_lines_read, string name, string orig_line) {
+  string curr_line;
+  ofs_reads << name << endl;
+  ofs_reads << orig_line << endl;
+  // Output separator and quality.
+  getline(ifs_reads_query, curr_line);
+  ++num_lines_read;
+  ofs_reads << curr_line << endl;
+  getline(ifs_reads_query, curr_line);
+  ++num_lines_read;
+  ofs_reads << curr_line << endl;
+}
+
+map<uint16_t, uint16_t> init_distance_map(uint16_t distance_threshold) {
+  map<uint16_t, uint16_t> distances;
+  for (uint16_t i = 0; i <= distance_threshold; ++i) {
+    distances[i] = 0;
+  }
+  return distances;
 }

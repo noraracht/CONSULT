@@ -4,11 +4,11 @@ minimize:
 	g++ minimize.cpp -std=c++11 -o minimize
 
 map:
-	g++ map.cpp -std=c++11 -O3 -o map
+	g++ consult_map.cpp -std=c++11 -O3 -o consult_map
 
 search:
-	g++ search.cpp -std=c++11 -fopenmp -O3 -o search
+	g++ consult_search.cpp -std=c++11 -fopenmp -O3 -o consult_search
 
 clean:
-	rm -f ./minimize ./map ./search
+	rm -f ./minimize ./consult_map ./consult_search
 	@echo "Succesfully cleaned."

@@ -1,34 +1,34 @@
-#include <algorithm>
-#include <bitset>
-#include <chrono>
-#include <cmath>
-#include <cstdio>
+#include <algorithm>           // for sort, count, fill
+#include <bits/getopt_core.h>  // for optarg, optopt, optind, opterr
+#include <bits/stdint-uintn.h> // for uint64_t, uint8_t, uint32_t, uint16_t
+#include <chrono>              // for seconds, duration_cast, operator-
+#include <cmath>               // for round, pow, ceil
+#include <cstdint>             // for int8_t, uint64_t, uint8_t
+#include <cstdio>              // for fwrite, fclose, fopen, fprintf, FILE
 #include <cstdlib>
-#include <cstring>
-#include <fstream>
-#include <getopt.h>
-#include <iomanip>
-#include <iostream>
-#include <iterator>
-#include <map>
-#include <new>
-#include <numeric>
-#include <random>
-#include <set>
-#include <string>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <time.h>
-#include <tuple>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
-
+#include <cstring> // for strerror
+#include <ctype.h> // for isprint
 #include <ctype.h>
+#include <errno.h>            // for errno
+#include <ext/alloc_traits.h> // for __alloc_traits<>::value_type
+#include <fstream>
+#include <functional> // for greater
+#include <getopt.h>   // for getopt_long, option
+#include <iomanip>    // for operator<<, setprecision
+#include <iostream>   // for operator<<, endl, basic_ostream, ostream
+#include <memory>     // for allocator_traits<>::value_type
+#include <new>        // for bad_alloc
+#include <numeric>    // for accumulate
+#include <sstream>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h>   // for atoi, exit, rand, srand, abort
+#include <string>     // for operator+, string, allocator, char_tr...
+#include <sys/stat.h> // for mkdir, S_IROTH, S_IRWXG, S_IRWXU, S_I...
+#include <sys/types.h>
+#include <time.h> // for time
+#include <tuple>  // for operator<, get, swap, make_tuple, tuple
 #include <unistd.h>
+#include <vector> // for vector, vector<>::value_type
 
 #define VERSION 17.1
 #define KMER_LENGTH 32
@@ -36,8 +36,6 @@
 #define SIGF_CHUNKS 24
 #define TAGF_CHUNKS 24
 #define ENCF_CHUNKS 24
-
-#define COLUMN_COUNT_OPT 0
 
 using namespace std;
 
@@ -71,7 +69,7 @@ int main(int argc, char *argv[]) {
 
   uint8_t t = 2;                                 // Tag size in bits.
   uint64_t partitions = pow(2, t);               // # of partitions; 2^(t)
-  uint64_t sigs_col_count = 7;                   // # of columns; partitions * b
+  uint64_t sigs_col_count = 7;                   // # of columns per, i.e., b.
   uint64_t sigs_row_count = pow(2, (2 * h) - t); // # of rows; 2^(2h-t)
 
   int cf_tmp;
@@ -84,14 +82,14 @@ int main(int argc, char *argv[]) {
         {"p-value", 1, 0, 'p'},
         {"l-value", 1, 0, 'l'},
         {"h-value", 1, 0, 'h'},
-        {"t-value", 1, 0, 't'},
-        {"column-count", 1, 0, COLUMN_COUNT_OPT},
+        {"tag-size", 1, 0, 't'},
+        {"column-per-tag", 1, 0, 'b'},
         {0, 0, 0, 0},
     };
 
     int option_index = 0;
     cf_tmp =
-        getopt_long(argc, argv, "i:o:p:l:h:t:", long_options, &option_index);
+        getopt_long(argc, argv, "i:o:p:l:h:t:b:", long_options, &option_index);
 
     if ((optarg != NULL) && (*optarg == '-')) {
       cf_tmp = ':';
@@ -116,10 +114,12 @@ int main(int argc, char *argv[]) {
       h = atoi(optarg); // Default value is 15.
       break;
     case 't':
+      // Number of partitions is 2^t.
       t = atoi(optarg); // Default value is 2.
       break;
-    case COLUMN_COUNT_OPT:
-      sigs_col_count = atoi(optarg); // Default value is7.
+    case 'b':
+      // Total number of columns is partitions * b.
+      sigs_col_count = atoi(optarg); // Default value is 7.
       break;
     case ':':
       printf("Missing option for '-%s'.\n", argv[optind - 2]);
