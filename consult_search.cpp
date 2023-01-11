@@ -44,15 +44,15 @@ using namespace std;
 vector<string> list_dir(const char *path);
 uint8_t hd(uint64_t x, uint64_t y);
 uint8_t get_encid(uint64_t sind, uint8_t enc_arr_id[]);
-uint64_t encodekmer_bits_reverse(const char *s, vector<int> pos);
-uint64_t encodekmer_bits(uint64_t val, vector<int8_t> shifts,
-                         vector<int8_t> bits_to_grab);
+uint64_t encode_kmer_bits_reverse(const char *s, vector<int> pos);
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
+                          vector<int8_t> bits_to_grab);
 
-void encodekmer(const char s[], uint64_t &b, uint64_t &b_sig);
-void encodekmer_reverse(const char s[], uint64_t &b, uint64_t &b_sig);
+void encode_kmer(const char s[], uint64_t &b_enc, uint64_t &b_sig);
+void encode_kmer_reverse(const char s[], uint64_t &b_enc, uint64_t &b_sig);
 
-void update_kmer(const char *s, uint64_t &b, uint64_t &b_sig);
-void update_kmer_reverse(const char *s, uint64_t &b, uint64_t &b_sig);
+void update_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig);
+void update_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig);
 
 void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
                     bool &kmer_found, bool &exact_match, uint8_t &num_matched);
@@ -76,7 +76,9 @@ int main(int argc, char *argv[]) {
   /* Defaults. */
   uint64_t c = 1;
   uint8_t thread_count = 1;
-  uint16_t distance_threshold = 0;
+
+  uint16_t distance_threshold;
+  bool given_distance_threshold = false;
 
   bool save_distances = false;
   bool classified_out = false;
@@ -110,15 +112,16 @@ int main(int argc, char *argv[]) {
       break;
     else if (cf_tmp == SAVE_DISTANCES_OPT)
       save_distances = true;
-    else if (cf_tmp == DISTANCE_THRESHOLD_OPT)
+    else if (cf_tmp == DISTANCE_THRESHOLD_OPT) {
       // Ignored if save_distances flag is not given.
       distance_threshold = atoi(optarg); // Default equals to p.
-    else if (cf_tmp == CLASSIFIED_OUT_OPT)
+      given_distance_threshold = true;
+    } else if (cf_tmp == CLASSIFIED_OUT_OPT)
       classified_out = true;
     else if (cf_tmp == UNCLASSIFIED_OUT_OPT)
       unclassified_out = true;
     else if (cf_tmp == THREAD_COUNT_OPT)
-      thread_count = max(atoi(optarg), 1); // Default is 1.
+      thread_count = atoi(optarg); // Default is 1.
     else {
       switch (cf_tmp) {
       case 'i':
@@ -131,7 +134,7 @@ int main(int argc, char *argv[]) {
         query_fastq_file = optarg;
         break;
       case 'c':
-        c = max(atoi(optarg), 1); // Default is 1.
+        c = atoi(optarg); // Default is 1.
         break;
       case ':':
         printf("Missing option for '-%s'.\n", argv[optind - 2]);
@@ -208,8 +211,8 @@ int main(int argc, char *argv[]) {
   fread(&encli_1, sizeof(uint64_t), 1, fmeta);
   fread(&enc_arr_id_size, sizeof(uint64_t), 1, fmeta);
 
-  if (distance_threshold == 0) {
-    distance_threshold = ceil(3 * p / 2);
+  if (!given_distance_threshold) {
+    distance_threshold = ceil(3 * p / 2) + 1;
   }
   assert(distance_threshold >= 0);
 
@@ -259,9 +262,9 @@ int main(int argc, char *argv[]) {
   }
 
   // Read sig rows and columns counts.
-  uint64_t sigs_col_count;
+  uint64_t b;
   uint64_t sigs_row_count;
-  fread(&sigs_col_count, sizeof(uint64_t), 1, fmeta);
+  fread(&b, sizeof(uint64_t), 1, fmeta);
   fread(&sigs_row_count, sizeof(uint64_t), 1, fmeta);
 
   // Read tag size, partition count, tag mask and big sig mask.
@@ -276,7 +279,7 @@ int main(int argc, char *argv[]) {
 
   // Display map information.
   cout << "Sigs row count = " << sigs_row_count << '\n';
-  cout << "Columns = " << unsigned(sigs_col_count) << endl;
+  cout << "Columns = " << unsigned(b) << endl;
   cout << "Partitions = " << unsigned(partitions) << endl;
   cout << "Tag size = " << unsigned(tag_size) << '\n';
   cout << "Tag mask = " << unsigned(tag_mask) << '\n';
@@ -616,7 +619,7 @@ int main(int argc, char *argv[]) {
   string name;
   string token;
 
-  uint64_t b;
+  uint64_t b_enc;
   uint64_t b_sig;
 
   uint64_t test_enc;
@@ -651,20 +654,20 @@ int main(int argc, char *argv[]) {
 
       while (getline(iss, token, 'N')) {
         if (token.length() >= int(k)) {
-          b = 0;
+          b_enc = 0;
           b_sig = 0;
 
           for (uint64_t i = 0; i < token.length(); i++) {
             if (i == 0) {
               string kmer_str = token.substr(i, int(k));
               const char *ckmer = kmer_str.c_str();
-              encodekmer(ckmer, b, b_sig);
+              encode_kmer(ckmer, b_enc, b_sig);
               i = k - 1;
 
             } else {
               string kmer_str = token.substr(i, 1);
               const char *ckmer = kmer_str.c_str();
-              update_kmer(ckmer, b, b_sig);
+              update_kmer(ckmer, b_enc, b_sig);
             }
 
             bool kmer_found = false;
@@ -673,7 +676,7 @@ int main(int argc, char *argv[]) {
 
             for (int64_t funci = 0; funci < l; funci++) {
               kmer_sig =
-                  encodekmer_bits(b_sig, shifts[funci], grab_bits[funci]);
+                  encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 
               // Get first 2 bits of signature (effectively bits 28 - 27) of
               // 32 bit encoding as partition numbers.
@@ -696,21 +699,18 @@ int main(int argc, char *argv[]) {
 
                 for (uint64_t enc = enc_start; enc < enc_end; enc++) {
                   // Set encoding array id.
-                  enc_arr_ind = get_encid(sigs_col_count * f_tmp +
-                                              sigs_col_count * s_tmp + enc,
-                                          enc_arr_id);
+                  enc_arr_ind =
+                      get_encid(b * f_tmp + b * s_tmp + enc, enc_arr_id);
 
                   if (enc_arr_ind == 0) {
                     test_enc =
-                        encode_arr_0[sigs_arr[sigs_col_count * f_tmp +
-                                              sigs_col_count * s_tmp + enc]];
+                        encode_arr_0[sigs_arr[b * f_tmp + b * s_tmp + enc]];
                   } else {
                     test_enc =
-                        encode_arr_1[sigs_arr[sigs_col_count * f_tmp +
-                                              sigs_col_count * s_tmp + enc]];
+                        encode_arr_1[sigs_arr[b * f_tmp + b * s_tmp + enc]];
                   }
 
-                  uint8_t dist = hd(b, test_enc);
+                  uint8_t dist = hd(b_enc, test_enc);
                   check_distance(dist, p, min_dist, kmer_found, exact_match,
                                  num_matched);
 
@@ -755,19 +755,19 @@ int main(int argc, char *argv[]) {
 
         while (getline(iss, token, 'N')) {
           if (token.length() >= int(k)) {
-            b = 0;
+            b_enc = 0;
             b_sig = 0;
 
             for (uint64_t i = 0; i < token.length(); i++) {
               if (i == 0) {
                 string kmer_str = token.substr(i, int(k));
                 const char *ckmer = kmer_str.c_str();
-                encodekmer_reverse(ckmer, b, b_sig);
+                encode_kmer_reverse(ckmer, b_enc, b_sig);
                 i = k - 1;
               } else {
                 string kmer_str = token.substr(i, 1);
                 const char *ckmer = kmer_str.c_str();
-                update_kmer_reverse(ckmer, b, b_sig);
+                update_kmer_reverse(ckmer, b_enc, b_sig);
               }
 
               bool kmer_found = false;
@@ -776,7 +776,7 @@ int main(int argc, char *argv[]) {
 
               for (uint64_t funci = 0; funci < l; funci++) {
                 kmer_sig =
-                    encodekmer_bits(b_sig, shifts[funci], grab_bits[funci]);
+                    encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 
                 // Get first 2 bits of signature (effectively bits 28 - 27)
                 // of 32 bit encoding as partition numbers.
@@ -798,21 +798,18 @@ int main(int argc, char *argv[]) {
                   enc_end = tag_arr[f_tmp + s_tmp + tag];
 
                   for (uint64_t enc = enc_start; enc < enc_end; enc++) {
-                    enc_arr_ind = get_encid(sigs_col_count * f_tmp +
-                                                sigs_col_count * s_tmp + enc,
-                                            enc_arr_id);
+                    enc_arr_ind =
+                        get_encid(b * f_tmp + b * s_tmp + enc, enc_arr_id);
 
                     if (enc_arr_ind == 0) {
                       test_enc =
-                          encode_arr_0[sigs_arr[f_tmp * sigs_col_count +
-                                                sigs_col_count * s_tmp + enc]];
+                          encode_arr_0[sigs_arr[f_tmp * b + b * s_tmp + enc]];
                     } else {
                       test_enc =
-                          encode_arr_1[sigs_arr[f_tmp * sigs_col_count +
-                                                s_tmp * sigs_col_count + enc]];
+                          encode_arr_1[sigs_arr[f_tmp * b + s_tmp * b + enc]];
                     }
 
-                    uint8_t dist = hd(b, test_enc);
+                    uint8_t dist = hd(b_enc, test_enc);
                     check_distance(dist, p, min_dist, kmer_found, exact_match,
                                    num_matched_reverse);
 
@@ -904,90 +901,90 @@ int main(int argc, char *argv[]) {
 
 // Function definitions.
 
-void encodekmer(const char *s, uint64_t &b, uint64_t &b_sig) {
+void encode_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
   for (int i = 0; i < int(KMER_LENGTH); i++) {
-    b = b << 1;
+    b_enc = b_enc << 1;
     b_sig = b_sig << 2;
 
     if (s[i] == 'T') {
-      b += 4294967297;
+      b_enc += 4294967297;
       b_sig += 3;
     } else if (s[i] == 'G') {
-      b += 4294967296;
+      b_enc += 4294967296;
       b_sig += 2;
     } else if (s[i] == 'C') {
-      b += 1;
+      b_enc += 1;
       b_sig += 1;
     } else {
-      b += 0;
+      b_enc += 0;
       b_sig += 0;
     }
   }
 }
 
-void encodekmer_reverse(const char *s, uint64_t &b, uint64_t &b_sig) {
+void encode_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
   for (int i = 0; i < int(KMER_LENGTH); i++) {
-    b = b << 1;
+    b_enc = b_enc << 1;
     b_sig = b_sig << 2;
 
     if (s[i] == 'A') {
-      b += 4294967297;
+      b_enc += 4294967297;
       b_sig += 3;
     } else if (s[i] == 'C') {
-      b += 4294967296;
+      b_enc += 4294967296;
       b_sig += 2;
     } else if (s[i] == 'G') {
-      b += 1;
+      b_enc += 1;
       b_sig += 1;
     } else {
-      b += 0;
+      b_enc += 0;
       b_sig += 0;
     }
   }
 }
 
-void update_kmer(const char *s, uint64_t &b, uint64_t &b_sig) {
-  b = b << 1;
+void update_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
+  b_enc = b_enc << 1;
   b_sig = b_sig << 2;
 
   // Create a mask that has set 32 bit only and set bit 32 to 0.
   uint64_t mask = 4294967297;
-  b = b & ~mask;
+  b_enc = b_enc & ~mask;
 
   if (s[0] == 'T') {
-    b += 4294967297;
+    b_enc += 4294967297;
     b_sig += 3;
   } else if (s[0] == 'G') {
-    b += 4294967296;
+    b_enc += 4294967296;
     b_sig += 2;
   } else if (s[0] == 'C') {
-    b += 1;
+    b_enc += 1;
     b_sig += 1;
   } else {
-    b += 0;
+    b_enc += 0;
     b_sig += 0;
   }
 }
 
-void update_kmer_reverse(const char *s, uint64_t &b, uint64_t &b_sig) {
-  b = b << 1;
+void update_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
+  b_enc = b_enc << 1;
   b_sig = b_sig << 2;
 
   // Create a mask that has set 32 bit only and set bit 32 to 0.
   uint64_t mask = 4294967297;
-  b = b & ~mask;
+  b_enc = b_enc & ~mask;
 
   if (s[0] == 'A') {
-    b += 4294967297;
+    b_enc += 4294967297;
     b_sig += 3;
   } else if (s[0] == 'C') {
-    b += 4294967296;
+    b_enc += 4294967296;
     b_sig += 2;
   } else if (s[0] == 'G') {
-    b += 1;
+    b_enc += 1;
     b_sig += 1;
   } else {
-    b += 0;
+    b_enc += 0;
     b_sig += 0;
   }
 }
@@ -1014,8 +1011,8 @@ vector<string> list_dir(const char *path) {
   return (userString);
 }
 
-uint64_t encodekmer_bits(uint64_t val, vector<int8_t> shifts,
-                         vector<int8_t> bits_to_grab) {
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
+                          vector<int8_t> bits_to_grab) {
   uint64_t res = 0;
   int i = 0;
 
@@ -1031,7 +1028,7 @@ uint64_t encodekmer_bits(uint64_t val, vector<int8_t> shifts,
   return uint64_t(res);
 }
 
-uint64_t encodekmer_bits_reverse(const char *s, vector<int> pos) {
+uint64_t encode_kmer_bits_reverse(const char *s, vector<int> pos) {
   uint64_t d = 0;
   for (int i = 0; i < pos.size(); i++) {
     d = d << 2;

@@ -31,7 +31,7 @@ search:
 		-c 1 \
 	--thread-count 1 \
 	--unclassified-out --classified-out \
-	--save-distances --distance-threshold 5
+	--save-distances
 
 map:
 	@echo -e "\n===COMPILING===\n"
@@ -44,7 +44,4 @@ map:
 		-i "k32C_af_mininimization.fa" \
 		-o "G000307305_nbr_mapping" \
 		-p 3 \
-		-l 2 \
-		-h 15 \
-		-t 2 \
-		-b 7
+		-t 2

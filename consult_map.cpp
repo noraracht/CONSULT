@@ -40,10 +40,10 @@
 using namespace std;
 
 // Prototypes.
-uint64_t encodekmer_bits(uint64_t val, vector<int8_t> shifts,
-                         vector<int8_t> bits_to_grab);
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
+                          vector<int8_t> bits_to_grab);
 
-void encodekmer(const char s[], uint64_t &b, uint64_t &b_sig);
+void encode_kmer(const char s[], uint64_t &b_enc, uint64_t &b_sig);
 
 uint64_t file_read(istream &is, vector<char> &buff);
 uint64_t count_lines(const vector<char> &buff, int size);
@@ -60,17 +60,16 @@ int main(int argc, char *argv[]) {
 
   uint16_t k = KMER_LENGTH;
   /* Defaults */
-  uint64_t p = 3;
-  uint64_t l = 2;
-  uint64_t h = 15;
-  /* float alpha = 0.95; // This is just to determine correct h value. */
-  /* uint64_t h = round(log(1 - (pow((1 - alpha), (1 / float(l))))) / */
-  /*                    log(1 - float(p) / float(k))); */
+  uint64_t p = 3;                  // Hamming distance threshold fot matches.
+  uint64_t t = 2;                  // Tag size in bits.
+  uint64_t partitions = pow(2, t); // # of partitions; 2^(t)
 
-  uint8_t t = 2;                                 // Tag size in bits.
-  uint64_t partitions = pow(2, t);               // # of partitions; 2^(t)
-  uint64_t sigs_col_count = 7;                   // # of columns per, i.e., b.
-  uint64_t sigs_row_count = pow(2, (2 * h) - t); // # of rows; 2^(2h-t)
+  uint64_t l; // Number of tabels, i.e. hash functions.
+  uint64_t h; // Number of bits for hashing.
+  uint64_t b; // # of columns per partition, i.e., b.
+  bool given_h = false;
+  bool given_l = false;
+  bool given_b = false;
 
   int cf_tmp;
   opterr = 0;
@@ -80,9 +79,9 @@ int main(int argc, char *argv[]) {
         {"input-fasta-file", 1, 0, 'i'},
         {"output-library-directory", 1, 0, 'o'},
         {"p-value", 1, 0, 'p'},
-        {"l-value", 1, 0, 'l'},
         {"h-value", 1, 0, 'h'},
         {"tag-size", 1, 0, 't'},
+        {"number-of-tables", 1, 0, 'l'},
         {"column-per-tag", 1, 0, 'b'},
         {0, 0, 0, 0},
     };
@@ -105,21 +104,26 @@ int main(int argc, char *argv[]) {
       output_library_dir = optarg;
       break;
     case 'p':
+      // Hamming distance threshold for matches.
       p = atoi(optarg); // Default value is 3.
-      break;
-    case 'l':
-      l = atoi(optarg); // Default value is 2.
-      break;
-    case 'h':
-      h = atoi(optarg); // Default value is 15.
       break;
     case 't':
       // Number of partitions is 2^t.
-      t = atoi(optarg); // Default value is 2.
+      t = atoi(optarg);       // Default value is 2.
+      partitions = pow(2, t); // # of partitions; 2^(t)
+      break;
+    case 'l':
+      l = atoi(optarg); // Default is set by heuristic.
+      given_l = true;
+      break;
+    case 'h':
+      h = atoi(optarg); // Default is set by heuristic.
+      given_h = true;
       break;
     case 'b':
       // Total number of columns is partitions * b.
-      sigs_col_count = atoi(optarg); // Default value is 7.
+      b = atoi(optarg); // Default is set by heuristic.
+      given_b = true;
       break;
     case ':':
       printf("Missing option for '-%s'.\n", argv[optind - 2]);
@@ -173,16 +177,48 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
-  cout << "k-mer count = " << kmer_count << endl;
+  /* Heuristic for determining parameters. */
+  float alpha = 0.45;
+  float d = (float)p / k;
+  float memory_usage_min = numeric_limits<float>::max();
+
+  float memory_usage_tmp;
+  uint64_t h_tmp = h;
+  uint64_t l_tmp = l;
+
+  for (uint64_t b_tmp = 4; b_tmp <= (20 * !given_b + given_b * 4); b_tmp++) {
+    if (given_b)
+      b_tmp = b;
+    if (!given_h)
+      h_tmp = max(4.0, ceil(0.5 * log2(((float)kmer_count) / b_tmp)));
+    if (!given_l)
+      l_tmp =
+          max(2.0, round(log(1.0 - alpha) / log(1.0 - pow(1.0 - d, h_tmp))));
+    memory_usage_tmp =
+        (float)(4 * b_tmp * pow(2, 2 * h_tmp) * l + 8 * kmer_count) /
+        pow(10.0, 9);
+    if (memory_usage_tmp < memory_usage_min) {
+      h = h_tmp;
+      l = l_tmp;
+      b = b_tmp;
+      memory_usage_min = memory_usage_tmp;
+    }
+  }
+  uint64_t sigs_row_count = pow(2, 2 * h - t); // # of rows; 2^(2h-t)
+  memory_usage_min =
+      (float)(4 * b * pow(2, 2 * h) * l + 8 * kmer_count) / pow(10.0, 9);
+
   cout << "k = " << k << '\n';
   cout << "p = " << p << '\n';
   cout << "l = " << l << '\n';
   cout << "Using h = " << h << '\n';
-  /* cout << "alpha = " << alpha << '\n'; */
+  cout << "Estimated size of the reference library (GB): " << std::fixed
+       << std::setprecision(4) << memory_usage_min << endl;
+  cout << "\n----------------------\n" << '\n';
 
   // Allocate signature array.
   uint32_t *sigs_arr;
-  uint64_t sigs_arr_size = sigs_row_count * sigs_col_count * partitions * l;
+  uint64_t sigs_arr_size = sigs_row_count * b * partitions * l;
 
   try {
     sigs_arr = new uint32_t[sigs_arr_size];
@@ -209,7 +245,7 @@ int main(int argc, char *argv[]) {
 
   // Allocate tag array.
   int8_t *tag_arr;
-  uint64_t tag_arr_size = sigs_row_count * sigs_col_count * partitions * l;
+  uint64_t tag_arr_size = sigs_row_count * b * partitions * l;
 
   try {
     tag_arr = new int8_t[tag_arr_size];
@@ -219,7 +255,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* Initialize tag array to -1. */
-  // for (uint64_t j = 0; j < sigs_row_count * sigs_col_count * partitions * l;
+  // for (uint64_t j = 0; j < sigs_row_count * b * partitions * l;
   //      j++) {
   //   tag_arr[j] = -1;
   // }
@@ -348,7 +384,7 @@ int main(int argc, char *argv[]) {
   uint64_t encli_0 = 0;
   uint64_t encli_1 = 0;
 
-  uint64_t b;
+  uint64_t b_enc;
   uint64_t b_sig;
 
   bool kmer_written;
@@ -372,11 +408,11 @@ int main(int argc, char *argv[]) {
   while (std::getline(ifs, line)) {
     if (line.rfind('>', 0) != 0) {
       const char *cline = line.c_str();
-      b = 0;
+      b_enc = 0;
       b_sig = 0;
       kmer_written = false;
 
-      encodekmer(cline, b, b_sig);
+      encode_kmer(cline, b_enc, b_sig);
 
       if (li % 1000000 == 0) {
         cout << "-- Encoding " << li << endl;
@@ -391,7 +427,7 @@ int main(int argc, char *argv[]) {
       }
 
       for (int i = 0; i < l; i++) {
-        sig_hash = encodekmer_bits(b_sig, shifts[i], grab_bits[i]);
+        sig_hash = encode_kmer_bits(b_sig, shifts[i], grab_bits[i]);
 
         // Get first 2 bits of signature (effectively bits 28 - 27) of 32 bit
         // encoding as tag.
@@ -402,13 +438,13 @@ int main(int argc, char *argv[]) {
         big_sig_hash = sig_hash & big_sig_mask;
 
         uint64_t tmp_idx =
-            (sigs_row_count * sigs_col_count * partitions * i) +
-            (big_sig_hash * sigs_col_count * partitions) +
+            (sigs_row_count * b * partitions * i) +
+            (big_sig_hash * b * partitions) +
             sigs_indicator_arr[sigs_row_count * i + big_sig_hash];
 
         // Check is row space is available for forward k-mer.
         if (sigs_indicator_arr[sigs_row_count * i + big_sig_hash] <
-            sigs_col_count * partitions) {
+            b * partitions) {
           // Populate tag array.
           tag_arr[tmp_idx] = tag;
 
@@ -437,10 +473,10 @@ int main(int argc, char *argv[]) {
 
       if (kmer_written) {
         if (enc_array_ind == 0) {
-          encode_arr_0[encli_0] = b;
+          encode_arr_0[encli_0] = b_enc;
           encli_0 += 1;
         } else {
-          encode_arr_1[encli_1] = b;
+          encode_arr_1[encli_1] = b_enc;
           encli_1 += 1;
         }
       }
@@ -488,7 +524,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Sort sigs and tag arrays.
-  // Sort uint32_t array b[] according to the order defined by a[].
+  // Sort uint32_t array b_enc[] according to the order defined by a[].
   for (int i = 0; i < l; i++) {
     for (uint64_t j = 0; j < sigs_row_count; j++) {
       if (sigs_indicator_arr[sigs_row_count * i + j] > 0) {
@@ -500,8 +536,7 @@ int main(int argc, char *argv[]) {
         // Storing the respective array elements in pairs.
         for (uint64_t k = 0; k < n; k++) {
           uint64_t tmp_idx =
-              (sigs_row_count * sigs_col_count * partitions * i) +
-              (j * sigs_col_count * partitions) + k;
+              (sigs_row_count * b * partitions * i) + (j * b * partitions) + k;
           int8_t tag_val = tag_arr[tmp_idx];
           uint32_t sig_val = sigs_arr[tmp_idx];
           uint8_t encoding_id = enc_arr_id[tmp_idx];
@@ -526,8 +561,7 @@ int main(int argc, char *argv[]) {
         // Modifying original sig array.
         for (uint64_t k = 0; k < n; k++) {
           uint64_t tmp_idx =
-              (sigs_row_count * sigs_col_count * partitions * i) +
-              (j * sigs_col_count * partitions) + k;
+              (sigs_row_count * b * partitions * i) + (j * b * partitions) + k;
           sigs_arr[tmp_idx] = get<1>(pairt[k]);
           enc_arr_id[tmp_idx] = get<2>(pairt[k]);
         }
@@ -593,8 +627,8 @@ int main(int argc, char *argv[]) {
   }
 
   // Write sig columns counts and  sig row count.
-  uint64_t sig_col_cnt = sigs_col_count;
-  fwrite(&sig_col_cnt, sizeof(uint64_t), 1, wfmeta);
+  uint64_t sig_col_c = b;
+  fwrite(&sig_col_c, sizeof(uint64_t), 1, wfmeta);
   fwrite(&sigs_row_count, sizeof(uint64_t), 1, wfmeta);
 
   // Write tag size, partition count, tag mask and big_sig_mask.
@@ -786,25 +820,26 @@ int main(int argc, char *argv[]) {
        << " seconds" << endl;
 
   // Output map information.
-  cout << "Columns = " << sigs_col_count << endl;
+  cout << "Columns = " << b << endl;
   cout << "Partitions = " << unsigned(partitions) << endl;
   cout << "Sigs row count = " << sigs_row_count << endl;
   cout << "Tag size = " << unsigned(t) << endl;
   cout << "Tag mask = " << unsigned(tag_mask) << endl;
   cout << "Big sig mask = " << big_sig_mask << endl;
+  cout << "\n----------------------\n" << '\n';
 
   // Compute the usage of rows in signature matrix to determine how many
   // positions in each row are used.
 
   // Row count vector.
-  vector<uint64_t> sig_row_count_vec(sigs_col_count * partitions + 1, 0);
+  vector<uint64_t> sig_row_count_vec(b * partitions + 1, 0);
 
   // Traverse indicator array to compute filled positions.
   for (int i = 0; i < l; i++) {
     for (uint64_t r = 0; r < sigs_row_count; r++) {
       sig_row_count_vec[sigs_indicator_arr[sigs_row_count * i + r]] += 1;
     }
-    for (int s = 0; s < sigs_col_count * partitions + 1; s++) {
+    for (int s = 0; s < b * partitions + 1; s++) {
       cout << "l = " << l << " -- Count of rows with positions filled " << s
            << " : " << sig_row_count_vec[s];
       cout << " (" << std::fixed << std::setprecision(6)
@@ -837,29 +872,29 @@ int main(int argc, char *argv[]) {
 
 // Function definitions.
 
-void encodekmer(const char *s, uint64_t &b, uint64_t &b_sig) {
+void encode_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
   for (int i = 0; i < int(KMER_LENGTH); i++) {
-    b = b << 1;
+    b_enc = b_enc << 1;
     b_sig = b_sig << 2;
 
     if (s[i] == 'T') {
-      b += 4294967297;
+      b_enc += 4294967297;
       b_sig += 3;
     } else if (s[i] == 'G') {
-      b += 4294967296;
+      b_enc += 4294967296;
       b_sig += 2;
     } else if (s[i] == 'C') {
-      b += 1;
+      b_enc += 1;
       b_sig += 1;
     } else {
-      b += 0;
+      b_enc += 0;
       b_sig += 0;
     }
   }
 }
 
-uint64_t encodekmer_bits(uint64_t val, vector<int8_t> shifts,
-                         vector<int8_t> bits_to_grab) {
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
+                          vector<int8_t> bits_to_grab) {
   uint64_t res = 0;
   int i = 0;
   while (shifts[i] != -1) {
