@@ -1,5 +1,3 @@
-#include <algorithm>
-#include <bitset>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -9,18 +7,8 @@
 #include <getopt.h>
 #include <iomanip>
 #include <iostream>
-#include <iterator>
-#include <limits>
-#include <map>
-#include <new>
-#include <random>
-#include <set>
 #include <string>
 #include <time.h>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
 
 #define VERSION 3.0
 #define SL 35
@@ -86,15 +74,14 @@ int main(int argc, char *argv[]) {
   }
 
   if (argc != 5) {
-    printf("Number of supplied arguments is not correct.\n");
+    cout << "Number of supplied arguments is not correct." << endl;
     exit(0);
   }
 
   // Open input file.
   ifstream fin(input_fasta_file);
-  // Show message:
   if (!fin.is_open()) {
-    std::cout << "Cannot open input file.";
+    cout << "Cannot open input FASTA file." << endl;
     exit(0);
   }
   cout << "Input file : " << input_fasta_file << endl;
@@ -102,15 +89,14 @@ int main(int argc, char *argv[]) {
   // Open output file.
   ofstream outputFile;
   outputFile.open(output_fasta_file);
-  // Show message:
   if (!outputFile.is_open()) {
-    cout << "Cannot open output file!" << endl;
-    return 1;
+    cout << "Cannot open output FASTA file." << endl;
+    exit(0);
   }
-  cout << "Output file : " << output_fasta_file << endl;
+  cout << "Output file : " << output_fasta_file << endl << endl;
 
-  cout << "SL = " << int(SL) << endl;
-  cout << "Minimizer length = " << MINIMIZER << endl;
+  cout << "SL (k-mer length) = " << int(SL) << endl;
+  cout << "Minimizer length = " << MINIMIZER << endl << endl;
 
   string line;
   string name;
@@ -132,7 +118,7 @@ int main(int argc, char *argv[]) {
       }
 
       if (kmer_count % 1000000 == 0) {
-        cout << "-- Minimizing " << kmer_count << endl;
+        cout << "-- Minimizing : " << kmer_count << " --" << endl;
       }
 
       // Write minimizer for a given kmer to file.
@@ -147,14 +133,14 @@ int main(int argc, char *argv[]) {
   fin.close();
   outputFile.close();
 
-  cout << "Total kmers : " << kmer_count << endl;
-  cout << "Total minimizers  : " << minimizer_count << endl;
+  cout << endl << "Total kmers : " << kmer_count << endl;
+  cout << "Total minimizers  : " << minimizer_count << endl << endl;
 
   // Recording end time.
   auto end = chrono::steady_clock::now();
   cout << "-- Done writing. Time so far: "
        << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds" << endl;
+       << " seconds." << endl;
 
   return 0;
 }

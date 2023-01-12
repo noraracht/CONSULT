@@ -33,7 +33,7 @@
 #define KMER_LENGTH 32
 
 #define SAVE_DISTANCES_OPT 'd'
-#define DISTANCE_THRESHOLD_OPT 'D'
+#define MAXIMUM_DISTANCE_OPT 'D'
 #define UNCLASSIFIED_OUT_OPT 0
 #define CLASSIFIED_OUT_OPT 1
 #define THREAD_COUNT_OPT 'T'
@@ -43,7 +43,7 @@ using namespace std;
 // Prototypes.
 vector<string> list_dir(const char *path);
 uint8_t hd(uint64_t x, uint64_t y);
-uint8_t get_encid(uint64_t sind, uint8_t enc_arr_id[]);
+uint8_t get_enc_id(uint64_t sind, uint8_t enc_arr_id[]);
 uint64_t encode_kmer_bits_reverse(const char *s, vector<int> pos);
 uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
                           vector<int8_t> bits_to_grab);
@@ -60,7 +60,7 @@ void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
 void output_reads(ofstream &ofs_reads, ifstream &ifs_reads_query,
                   uint64_t &num_lines_read, string name, string orig_line);
 
-map<uint16_t, uint16_t> init_distance_map(uint16_t distance_threshold);
+map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance);
 
 int main(int argc, char *argv[]) {
   auto start = chrono::steady_clock::now();
@@ -75,10 +75,10 @@ int main(int argc, char *argv[]) {
   uint64_t k = KMER_LENGTH;
   /* Defaults. */
   uint64_t c = 1;
-  uint8_t thread_count = 1;
+  uint64_t thread_count = 1;
 
-  uint16_t distance_threshold;
-  bool given_distance_threshold = false;
+  uint64_t maximum_distance;
+  bool given_maximum_distance = false;
 
   bool save_distances = false;
   bool classified_out = false;
@@ -92,10 +92,10 @@ int main(int argc, char *argv[]) {
         {"input-library-dir", 1, 0, 'i'},
         {"output-dir", 1, 0, 'o'},
         {"query-fastq-file", 1, 0, 'q'},
-        {"c-value", 1, 0, 'c'},
+        {"number-of-matches", 1, 0, 'c'},
         {"thread-count", 1, 0, THREAD_COUNT_OPT},
         {"save-distances", 0, 0, SAVE_DISTANCES_OPT},
-        {"distance-threshold", 1, 0, DISTANCE_THRESHOLD_OPT},
+        {"maximum-distance", 1, 0, MAXIMUM_DISTANCE_OPT},
         {"unclassified-out", 0, 0, UNCLASSIFIED_OUT_OPT},
         {"classified-out", 0, 0, CLASSIFIED_OUT_OPT},
         {0, 0, 0, 0},
@@ -112,10 +112,14 @@ int main(int argc, char *argv[]) {
       break;
     else if (cf_tmp == SAVE_DISTANCES_OPT)
       save_distances = true;
-    else if (cf_tmp == DISTANCE_THRESHOLD_OPT) {
+    else if (cf_tmp == MAXIMUM_DISTANCE_OPT) {
+      if (atoi(optarg) < 0) {
+        cout << "Value of --maximum-distance cannot be negative." << endl;
+        exit(1);
+      }
       // Ignored if save_distances flag is not given.
-      distance_threshold = atoi(optarg); // Default equals to p.
-      given_distance_threshold = true;
+      maximum_distance = atoi(optarg); // Default equals to p.
+      given_maximum_distance = true;
     } else if (cf_tmp == CLASSIFIED_OUT_OPT)
       classified_out = true;
     else if (cf_tmp == UNCLASSIFIED_OUT_OPT)
@@ -134,6 +138,11 @@ int main(int argc, char *argv[]) {
         query_fastq_file = optarg;
         break;
       case 'c':
+        if (atoi(optarg) < 1) {
+          cout << "Value of -c (--number-of-matches) cannot be smaller than 1."
+               << endl;
+          exit(1);
+        }
         c = atoi(optarg); // Default is 1.
         break;
       case ':':
@@ -162,22 +171,21 @@ int main(int argc, char *argv[]) {
   input_library_dir = input_library_dir.substr(0, endpos + 1);
 
   if (argc <= 16) {
-    cout << "-- Arguments supplied are;" << endl;
     cout << "Library directory : " << input_library_dir << endl;
     cout << "Query directory : " << query_fastq_file << endl;
-    cout << "Threads : " << (int)thread_count << endl;
+    cout << "Number ofthreads : " << thread_count << endl;
 
   } else {
-    printf("Too many arguments are supplied.\n");
-    exit(0);
+    cout << "Too many arguments are supplied.";
+    exit(1);
   }
 
   if (!(classified_out || unclassified_out || save_distances)) {
-    cout << "Nothing to do!\n";
-    cout << "> '--classified-out' flag to report classified reads.\n";
-    cout << "> '--unclassified-out' flag to report unclassified reads.\n";
-    cout << "> '--save-distances' flag to save distances of matched k-mers.\n";
-    return 0;
+    cout << "Nothing to do! Use at least one of the following flags:" << endl;
+    cout << "'--classified-out' to report classified reads," << endl;
+    cout << "'--unclassified-out' to report unclassified reads," << endl;
+    cout << "'--save-distances' to save distances of matched k-mers." << endl;
+    exit(1);
   }
 
   // Read map.
@@ -186,7 +194,7 @@ int main(int argc, char *argv[]) {
 
   FILE *fmeta = fopen(path.c_str(), "rb");
   if (!fmeta) {
-    cout << "Cannot open file!" << endl;
+    cout << "Cannot open the metadata file of the input library!" << endl;
     return 1;
   }
 
@@ -211,25 +219,38 @@ int main(int argc, char *argv[]) {
   fread(&encli_1, sizeof(uint64_t), 1, fmeta);
   fread(&enc_arr_id_size, sizeof(uint64_t), 1, fmeta);
 
-  if (!given_distance_threshold) {
-    distance_threshold = ceil(3 * p / 2) + 1;
+  if (!given_maximum_distance) {
+    maximum_distance = ceil(3 * p / 2) + 1;
   }
-  assert(distance_threshold >= 0);
+  assert(maximum_distance >= 0);
 
-  cout << "k = " << k << '\n';
-  cout << "p = " << p << '\n';
+  cout << "Parameter configuration:" << endl;
+  cout << "------------------------" << endl;
+  cout << "k = " << k << endl;
+  cout << "p = " << p << endl;
+  cout << "l = " << l << endl;
+  cout << "h = " << h << endl;
   cout << "c = " << c << endl;
-  cout << "l = " << l << '\n';
+  cout << "------------------------" << endl;
+  cout << endl;
+
   if (save_distances) {
-    cout << "distance_threshold = " << distance_threshold << '\n';
+    cout << "Maximum distance to save is " << maximum_distance << "." << endl;
   }
-  cout << "Using h = " << h << '\n';
+
+  cout << endl << "k-mer statistics:" << endl;
+  cout << "-----------------" << endl;
   cout << "k-mer count = " << kmer_count << endl;
-  cout << "k-mer count array 0  = " << encli_0 << endl;
-  cout << "k-mer count array 1  = " << encli_1 << endl;
+  cout << "k-mer count array-0 = " << encli_0 << endl;
+  cout << "k-mer count array-1 = " << encli_1 << endl;
+  cout << "-----------------" << endl << endl;
+
+  cout << "Library size information:" << endl;
+  cout << "-------------------------" << endl;
   cout << "Tag array size  = " << new_tag_arr_size << endl;
   cout << "Signature array size = " << sigs_arr_size << endl;
-  cout << "Encoding id array size  = " << enc_arr_id_size << endl;
+  cout << "Encoding ID array size  = " << enc_arr_id_size << endl;
+  cout << "-------------------------" << endl << endl;
 
   int vec_size = 0;
   vector<vector<int8_t>> shifts;
@@ -268,8 +289,8 @@ int main(int argc, char *argv[]) {
   fread(&sigs_row_count, sizeof(uint64_t), 1, fmeta);
 
   // Read tag size, partition count, tag mask and big sig mask.
-  uint64_t tag_size;
-  fread(&tag_size, sizeof(uint64_t), 1, fmeta);
+  uint64_t t;
+  fread(&t, sizeof(uint64_t), 1, fmeta);
   uint64_t partitions;
   fread(&partitions, sizeof(uint64_t), 1, fmeta);
   uint64_t tag_mask;
@@ -278,13 +299,15 @@ int main(int argc, char *argv[]) {
   fread(&big_sig_mask, sizeof(uint64_t), 1, fmeta);
 
   // Display map information.
-  cout << "Sigs row count = " << sigs_row_count << '\n';
-  cout << "Columns = " << unsigned(b) << endl;
-  cout << "Partitions = " << unsigned(partitions) << endl;
-  cout << "Tag size = " << unsigned(tag_size) << '\n';
-  cout << "Tag mask = " << unsigned(tag_mask) << '\n';
-  cout << "Big sig mask = " << big_sig_mask << '\n';
-  cout << "\n----------------------\n" << '\n';
+  cout << "Library information:" << endl;
+  cout << "--------------------" << endl;
+  cout << "Signatures row count = " << sigs_row_count << endl;
+  cout << "Signatures column count = " << b * partitions << endl;
+  cout << "Partitions = " << partitions << endl;
+  cout << "Tag size in bits = " << t << endl;
+  cout << "Tag mask = " << tag_mask << endl;
+  cout << "Big sig mask = " << big_sig_mask << endl;
+  cout << "--------------------" << endl << endl;
 
   // Read file chunk information.
   uint8_t sigf_chunks;
@@ -299,13 +322,13 @@ int main(int argc, char *argv[]) {
   vector<uint64_t> tag_chunk_counts;
   vector<uint64_t> enc_chunk_counts_0;
   vector<uint64_t> enc_chunk_counts_1;
-  vector<uint64_t> encid_chunk_counts;
+  vector<uint64_t> enc_id_chunk_counts;
 
   vector<uint64_t> sig_chunk_cumcounts;
   vector<uint64_t> tag_chunk_cumcounts;
   vector<uint64_t> enc_chunk_cumcounts_0;
   vector<uint64_t> enc_chunk_cumcounts_1;
-  vector<uint64_t> encid_chunk_cumcounts;
+  vector<uint64_t> enc_id_chunk_cumcounts;
 
   uint64_t read_counts;
   uint64_t sum_read_counts = 0;
@@ -348,8 +371,8 @@ int main(int argc, char *argv[]) {
 
   for (int m = 0; m < sigf_chunks; m++) {
     fread(&read_counts, sizeof(uint64_t), 1, fmeta);
-    encid_chunk_counts.push_back(read_counts);
-    encid_chunk_cumcounts.push_back(sum_read_counts);
+    enc_id_chunk_counts.push_back(read_counts);
+    enc_id_chunk_cumcounts.push_back(sum_read_counts);
     sum_read_counts += read_counts;
   }
 
@@ -357,64 +380,60 @@ int main(int argc, char *argv[]) {
 
   // Allocate signature array.
   uint32_t *sigs_arr;
-
   try {
     sigs_arr = new uint32_t[sigs_arr_size];
-    cout << "-- Done sigs allocation" << endl;
-  } catch (std::bad_alloc &ba) {
-    std::cerr << "Exception 'bad_alloc' is caught: " << ba.what() << endl;
+    cout << "Done memory allocation for signature array." << endl;
+  } catch (bad_alloc &ba) {
+    cerr << "Failed to allocate memory for signatures." << ba.what() << endl;
   }
 
   // Allocate tag array.
   int8_t *tag_arr;
-
   try {
     tag_arr = new int8_t[new_tag_arr_size];
-    cout << "-- Done tag allocation" << endl;
-  } catch (std::bad_alloc &ba) {
-    std::cerr << "Exception bad_alloc is caught: " << ba.what() << endl;
+    cout << "Done memory allocation for the tag array." << endl;
+  } catch (bad_alloc &ba) {
+    cerr << "Failed to allocate memory for tags." << ba.what() << endl;
   }
 
   // Allocate and read encoding array.
   uint64_t *encode_arr_0;
-  uint64_t *encode_arr_1;
-
   try {
     encode_arr_0 = new uint64_t[encli_0];
-    cout << "-- Done encoding array 0 allocation" << endl;
-  } catch (std::bad_alloc &ba) {
-    std::cerr << "Exception bad_alloc is caught: " << ba.what() << endl;
+    cout << "Done memory allocation for the array-0." << endl;
+  } catch (bad_alloc &ba) {
+    cerr << "Failed to allocate memory for array-0." << ba.what() << endl;
   }
 
+  uint64_t *encode_arr_1;
   try {
     encode_arr_1 = new uint64_t[encli_1];
-    cout << "-- Done encoding array 1 allocation" << endl;
-  } catch (std::bad_alloc &ba) {
-    std::cerr << "Exception bad_alloc is caught: " << ba.what() << endl;
+    cout << "Done memory allocation for the array-1." << endl;
+  } catch (bad_alloc &ba) {
+    cerr << "Failed to allocate memory for array-1." << ba.what() << endl;
   }
 
   // Allocate enc array id array.
   uint8_t *enc_arr_id;
-
   try {
     enc_arr_id = new uint8_t[enc_arr_id_size];
-    cout << "-- Done enc id allocation" << endl;
-  } catch (std::bad_alloc &ba) {
-    std::cerr << "Exception bad_alloc is caught: " << ba.what() << '\n';
+    cout << "Done memory allocation for the encoding array." << endl;
+  } catch (bad_alloc &ba) {
+    cerr << "Failed to allocate memory for encodings." << ba.what() << endl;
   }
 
   uint64_t total_sigs_read = 0;
   uint64_t total_tags_read = 0;
   uint64_t num_pairs_0 = 0;
   uint64_t num_pairs_1 = 0;
-  uint64_t total_encid_read = 0;
+  uint64_t total_enc_id_read = 0;
 
   // Read files in parallel.
   vector<string> str_map_sig;
   vector<string> str_map_tag;
   vector<string> str_map_enc;
   vector<string> str_map_ence;
-  vector<string> str_map_encid;
+  vector<string> str_map_enc_id;
 
   for (int m = 0; m < sigf_chunks; m++) {
     string map_sig = "sig" + to_string(m);
@@ -437,9 +456,9 @@ int main(int argc, char *argv[]) {
     str_map_ence.push_back(path);
   }
   for (int m = 0; m < sigf_chunks; m++) {
-    string map_encid = "encid" + to_string(m);
-    path = input_library_dir + "/" + map_encid;
-    str_map_encid.push_back(path);
+    string map_enc_id = "enc_id" + to_string(m);
+    path = input_library_dir + "/" + map_enc_id;
+    str_map_enc_id.push_back(path);
   }
 
   uint64_t temp_count;
@@ -451,10 +470,10 @@ int main(int argc, char *argv[]) {
     for (int m = 0; m < sigf_chunks; m++) {
       FILE *f;
       f = fopen(str_map_sig[m].c_str(), "rb");
-
       if (!f) {
-        cout << "Cannot open file!" << endl;
-        exit(0);
+        cout << "Cannot open file for some signatures in the library directory!"
+             << endl;
+        exit(1);
       }
 
       // Read signs.
@@ -474,10 +493,10 @@ int main(int argc, char *argv[]) {
     for (int m = 0; m < tagf_chunks; m++) {
       FILE *ftag;
       ftag = fopen(str_map_tag[m].c_str(), "rb");
-
       if (!ftag) {
-        cout << "Cannot open file!" << endl;
-        exit(0);
+        cout << "Cannot open file for some tags in the library directory!"
+             << endl;
+        exit(1);
       }
 
       // Read tags.
@@ -497,10 +516,10 @@ int main(int argc, char *argv[]) {
     for (int m = 0; m < encf_chunks; m++) {
       FILE *fenc;
       fenc = fopen(str_map_enc[m].c_str(), "rb");
-
       if (!fenc) {
-        cout << "Cannot open file!" << endl;
-        exit(0);
+        cout << "Cannot open file for some encodings in the library directory!"
+             << endl;
+        exit(1);
       }
 
       // Read encodings.
@@ -521,10 +540,8 @@ int main(int argc, char *argv[]) {
       // Open encode file.
       FILE *fence;
       fence = fopen(str_map_ence[m].c_str(), "rb");
-
       if (!fence) {
-        cout << "Cannot open file!" << endl;
-        exit(0);
+        cout << "Cannot open file for some encodings-e in the library!" << endl;
       }
 
       // Read encodings.
@@ -537,40 +554,43 @@ int main(int argc, char *argv[]) {
     }
   }
 
-// Read encid array.
+// Read enc_id array.
 #pragma omp parallel num_threads(thread_count)                                 \
-    shared(enc_arr_id, total_encid_read)
+    shared(enc_arr_id, total_enc_id_read)
   {
 #pragma omp for
     for (int m = 0; m < sigf_chunks; m++) {
-      FILE *fencid;
-      fencid = fopen(str_map_encid[m].c_str(), "rb");
-
-      if (!fencid) {
-        cout << "Cannot open file!" << endl;
-        exit(0);
+      FILE *fenc_id;
+      fenc_id = fopen(str_map_enc_id[m].c_str(), "rb");
+      if (!fenc_id) {
+        cout << "Cannot open file for some encodings ID in the library!"
+             << endl;
+        exit(1);
       }
 
       // Read sigs.
-      temp_count = fread(enc_arr_id + encid_chunk_cumcounts[m], sizeof(uint8_t),
-                         encid_chunk_counts[m], fencid);
+      temp_count = fread(enc_arr_id + enc_id_chunk_cumcounts[m],
+                         sizeof(uint8_t), enc_id_chunk_counts[m], fenc_id);
 #pragma omp atomic
-      total_encid_read += temp_count;
+      total_enc_id_read += temp_count;
 
-      fclose(fencid);
+      fclose(fenc_id);
     }
   }
 
-  cout << "Sigs read: " << total_sigs_read << endl;
-  cout << "Tags read: " << total_tags_read << endl;
-  cout << "Encodings-0 read: " << num_pairs_0 << endl;
-  cout << "Encodings-1 read: " << num_pairs_1 << endl;
-  cout << "Enc id read: " << total_encid_read << endl;
+  cout << endl << "Library statistics:" << endl;
+  cout << "-------------------" << endl;
+  cout << "Signatures read : " << total_sigs_read << endl;
+  cout << "Tags read : " << total_tags_read << endl;
+  cout << "Encodings ID read: " << total_enc_id_read << endl;
+  cout << "Encodings read to array-0 : " << num_pairs_0 << endl;
+  cout << "Encodings read to array-1 : " << num_pairs_1 << endl;
+  cout << "-------------------" << endl << endl;
 
   auto end = chrono::steady_clock::now();
-  cout << "-- Done reading. Now matching. Time so far: "
+  cout << "Done reading. Now matching. Time so far: "
        << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds" << endl;
+       << " seconds." << endl;
 
   /* string library_name = */
   /*     input_library_dir.substr(input_library_dir.find_last_of("/\\") + 1);
@@ -606,7 +626,7 @@ int main(int argc, char *argv[]) {
     ofs_kmer_distances << "READ_ID"
                        << "\t"
                        << "SEQ_TYPE";
-    for (uint16_t i = 0; i <= distance_threshold; ++i) {
+    for (uint64_t i = 0; i <= maximum_distance; ++i) {
       ofs_kmer_distances << "\t" << i;
     }
     ofs_kmer_distances << endl;
@@ -643,10 +663,10 @@ int main(int argc, char *argv[]) {
       uint8_t num_matched = 0;
       uint8_t num_matched_reverse = 0;
 
-      map<uint16_t, uint16_t> min_distances =
-          init_distance_map(distance_threshold);
-      map<uint16_t, uint16_t> reverse_min_distances =
-          init_distance_map(distance_threshold);
+      map<uint64_t, uint64_t> min_distances =
+          init_distance_map(maximum_distance);
+      map<uint64_t, uint64_t> reverse_min_distances =
+          init_distance_map(maximum_distance);
 
       string orig_line = curr_line;
 
@@ -680,7 +700,7 @@ int main(int argc, char *argv[]) {
 
               // Get first 2 bits of signature (effectively bits 28 - 27) of
               // 32 bit encoding as partition numbers.
-              tag = (kmer_sig >> ((2 * h) - tag_size)) & tag_mask;
+              tag = (kmer_sig >> ((2 * h) - t)) & tag_mask;
 
               // Get last 26 bits of signature (effectively bits 26 -1 ) of
               // 32 bit encoding as sigs row number.
@@ -700,7 +720,7 @@ int main(int argc, char *argv[]) {
                 for (uint64_t enc = enc_start; enc < enc_end; enc++) {
                   // Set encoding array id.
                   enc_arr_ind =
-                      get_encid(b * f_tmp + b * s_tmp + enc, enc_arr_id);
+                      get_enc_id(b * f_tmp + b * s_tmp + enc, enc_arr_id);
 
                   if (enc_arr_ind == 0) {
                     test_enc =
@@ -729,7 +749,7 @@ int main(int argc, char *argv[]) {
             if ((num_matched >= c) && (!save_distances)) {
               break;
               /* Default is equivalent to (kmer_found && save_distances). */
-            } else if ((min_dist < distance_threshold) && save_distances) {
+            } else if ((min_dist <= maximum_distance) && save_distances) {
               min_distances[min_dist]++;
             }
           }
@@ -780,7 +800,7 @@ int main(int argc, char *argv[]) {
 
                 // Get first 2 bits of signature (effectively bits 28 - 27)
                 // of 32 bit encoding as partition numbers.
-                tag = (kmer_sig >> ((2 * h) - tag_size)) & tag_mask;
+                tag = (kmer_sig >> ((2 * h) - t)) & tag_mask;
 
                 // Get last 26 bits of signature (effectively bits 26 -1 )
                 // of 32 bit encoding as sigs row number.
@@ -799,7 +819,7 @@ int main(int argc, char *argv[]) {
 
                   for (uint64_t enc = enc_start; enc < enc_end; enc++) {
                     enc_arr_ind =
-                        get_encid(b * f_tmp + b * s_tmp + enc, enc_arr_id);
+                        get_enc_id(b * f_tmp + b * s_tmp + enc, enc_arr_id);
 
                     if (enc_arr_ind == 0) {
                       test_enc =
@@ -828,7 +848,7 @@ int main(int argc, char *argv[]) {
               if ((num_matched_reverse >= c) && (!save_distances)) {
                 break;
                 /* Default is equivalent to (kmer_found && save_distances). */
-              } else if ((min_dist < distance_threshold) && save_distances) {
+              } else if ((min_dist <= maximum_distance) && save_distances) {
                 reverse_min_distances[min_dist]++;
               }
             }
@@ -892,9 +912,9 @@ int main(int argc, char *argv[]) {
   delete[] enc_arr_id;
 
   end = chrono::steady_clock::now();
-  cout << "-- Done matching for all. Time so far: "
+  cout << "Done matching for all. Time so far: "
        << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds" << endl;
+       << " seconds." << endl;
 
   return 0;
 }
@@ -1007,6 +1027,7 @@ vector<string> list_dir(const char *path) {
       userString.push_back(string(path) + "/" + entry->d_name);
     }
   }
+
   closedir(dir);
   return (userString);
 }
@@ -1045,7 +1066,7 @@ uint64_t encode_kmer_bits_reverse(const char *s, vector<int> pos) {
   return d;
 }
 
-uint8_t get_encid(uint64_t sind, uint8_t enc_arr_id[]) {
+uint8_t get_enc_id(uint64_t sind, uint8_t enc_arr_id[]) {
   uint64_t eind = sind >> 3;
   uint64_t ebit = sind % 8;
 
@@ -1081,9 +1102,9 @@ void output_reads(ofstream &ofs_reads, ifstream &ifs_reads_query,
   ofs_reads << curr_line << endl;
 }
 
-map<uint16_t, uint16_t> init_distance_map(uint16_t distance_threshold) {
-  map<uint16_t, uint16_t> distances;
-  for (uint16_t i = 0; i <= distance_threshold; ++i) {
+map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance) {
+  map<uint64_t, uint64_t> distances;
+  for (uint64_t i = 0; i <= maximum_distance; ++i) {
     distances[i] = 0;
   }
   return distances;

@@ -29,9 +29,9 @@ search:
 		-i "G000307305_nbr_mapping" \
 		-o "." \
 		-c 1 \
-	--thread-count 1 \
-	--unclassified-out --classified-out \
-	--save-distances
+		--thread-count 1 \
+		--unclassified-out --classified-out \
+		--save-distances --maximum-distance 5
 
 map:
 	@echo -e "\n===COMPILING===\n"
