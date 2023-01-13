@@ -57,8 +57,11 @@ void update_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig);
 void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
                     bool &kmer_found, bool &exact_match, uint8_t &num_matched);
 
-void output_reads(ofstream &ofs_reads, ifstream &ifs_reads_query,
-                  uint64_t &num_lines_read, string name, string orig_line);
+void output_reads(ofstream &ofs_reads, string name, string orig_read,
+                  string line_third, string line_fourth);
+void output_distances(ofstream &ofs_kmer_distances, string name,
+                      map<uint64_t, uint64_t> min_distances,
+                      map<uint64_t, uint64_t> reverse_min_distances);
 
 map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance);
 
@@ -173,7 +176,7 @@ int main(int argc, char *argv[]) {
   if (argc <= 16) {
     cout << "Library directory : " << input_library_dir << endl;
     cout << "Query directory : " << query_fastq_file << endl;
-    cout << "Number ofthreads : " << thread_count << endl;
+    cout << "Number of threads : " << thread_count << endl;
 
   } else {
     cout << "Too many arguments are supplied.";
@@ -635,31 +638,40 @@ int main(int argc, char *argv[]) {
   uint64_t num_lines_read = 0;
   uint64_t reads_matched = 0;
 
-  string curr_line;
-  string name;
-  string token;
+#pragma omp parallel num_threads(thread_count)
+  {
+    while (!ifs_reads_query.eof()) {
+      string name;
+      string curr_read;
+      string line_third;
+      string line_fourth;
 
-  uint64_t b_enc;
-  uint64_t b_sig;
+      uint64_t b_enc;
+      uint64_t b_sig;
 
-  uint64_t test_enc;
-  uint8_t enc_arr_ind;
+      uint64_t test_enc;
+      uint8_t enc_arr_ind;
 
-  int8_t tag;
-  uint64_t kmer_sig;
-  uint64_t big_sig_hash;
-  uint64_t enc_start;
-  uint64_t enc_end;
+      int8_t tag;
+      uint64_t kmer_sig;
+      uint64_t big_sig_hash;
+      uint64_t enc_start;
+      uint64_t enc_end;
 
-  while (!ifs_reads_query.eof()) {
-    getline(ifs_reads_query, curr_line);
+#pragma omp critical
+      {
+        getline(ifs_reads_query, name);
+        getline(ifs_reads_query, curr_read);
+        getline(ifs_reads_query, line_third);
+        getline(ifs_reads_query, line_fourth);
+      }
 
-    if (!ifs_reads_query)
-      break;
+      if (ifs_reads_query.eof())
+        break;
 
-    if (num_lines_read % 4 == 0) {
-      name = curr_line;
-    } else if (num_lines_read % 4 == 1) {
+#pragma omp atomic
+      num_lines_read += 4;
+
       uint8_t num_matched = 0;
       uint8_t num_matched_reverse = 0;
 
@@ -668,9 +680,9 @@ int main(int argc, char *argv[]) {
       map<uint64_t, uint64_t> reverse_min_distances =
           init_distance_map(maximum_distance);
 
-      string orig_line = curr_line;
-
-      istringstream iss(curr_line);
+      string orig_read = curr_read;
+      istringstream iss(curr_read);
+      string token;
 
       while (getline(iss, token, 'N')) {
         if (token.length() >= int(k)) {
@@ -762,16 +774,16 @@ int main(int argc, char *argv[]) {
 
       // Try reverse complement.
       if ((num_matched < c) || save_distances) {
-        int len = strlen(curr_line.c_str());
+        int len = strlen(curr_read.c_str());
         char swap;
 
         for (int i = 0; i < len / 2; i++) {
-          swap = curr_line[i];
-          curr_line[i] = curr_line[len - i - 1];
-          curr_line[len - i - 1] = swap;
+          swap = curr_read[i];
+          curr_read[i] = curr_read[len - i - 1];
+          curr_read[len - i - 1] = swap;
         }
 
-        istringstream iss(curr_line);
+        istringstream iss(curr_read);
 
         while (getline(iss, token, 'N')) {
           if (token.length() >= int(k)) {
@@ -861,35 +873,33 @@ int main(int argc, char *argv[]) {
       }
 
       if (save_distances) {
-        ofs_kmer_distances << name << "\t"
-                           << "--";
-        for (pair<const int, int> keyvaluepair : min_distances) {
-          ofs_kmer_distances << "\t" << keyvaluepair.second;
+#pragma omp critical
+        {
+          output_distances(ofs_kmer_distances, name, min_distances,
+                           reverse_min_distances);
         }
-        ofs_kmer_distances << endl;
-
-        ofs_kmer_distances << name << "\t"
-                           << "rc";
-        for (pair<const int, int> keyvaluepair : reverse_min_distances) {
-          ofs_kmer_distances << "\t" << keyvaluepair.second;
-        }
-        ofs_kmer_distances << endl;
       }
 
       if ((num_matched < c) && (num_matched_reverse < c)) {
         if (unclassified_out) {
-          output_reads(ofs_reads_unclassified, ifs_reads_query, num_lines_read,
-                       name, orig_line);
+#pragma omp critical
+          {
+            output_reads(ofs_reads_unclassified, name, orig_read, line_third,
+                         line_fourth);
+          }
         }
       } else if ((num_matched >= c) || (num_matched_reverse >= c)) {
+#pragma omp atomic
         reads_matched += 1;
         if (classified_out) {
-          output_reads(ofs_reads_classified, ifs_reads_query, num_lines_read,
-                       name, orig_line);
+#pragma omp critical
+          {
+            output_reads(ofs_reads_classified, name, orig_read, line_third,
+                         line_fourth);
+          }
         }
       }
     }
-    ++num_lines_read;
   }
 
   cout << query_fastq_file << " " << num_lines_read << " " << reads_matched
@@ -1088,18 +1098,31 @@ void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
   exact_match = dist == 0;
 }
 
-void output_reads(ofstream &ofs_reads, ifstream &ifs_reads_query,
-                  uint64_t &num_lines_read, string name, string orig_line) {
-  string curr_line;
+void output_reads(ofstream &ofs_reads, string name, string orig_read,
+                  string line_third, string line_fourth) {
   ofs_reads << name << endl;
-  ofs_reads << orig_line << endl;
+  ofs_reads << orig_read << endl;
   // Output separator and quality.
-  getline(ifs_reads_query, curr_line);
-  ++num_lines_read;
-  ofs_reads << curr_line << endl;
-  getline(ifs_reads_query, curr_line);
-  ++num_lines_read;
-  ofs_reads << curr_line << endl;
+  ofs_reads << line_third << endl;
+  ofs_reads << line_fourth << endl;
+}
+
+void output_distances(ofstream &ofs_kmer_distances, string name,
+                      map<uint64_t, uint64_t> min_distances,
+                      map<uint64_t, uint64_t> reverse_min_distances) {
+  ofs_kmer_distances << name << "\t"
+                     << "--";
+  for (pair<const int, int> keyvaluepair : min_distances) {
+    ofs_kmer_distances << "\t" << keyvaluepair.second;
+  }
+  ofs_kmer_distances << endl;
+
+  ofs_kmer_distances << name << "\t"
+                     << "rc";
+  for (pair<const int, int> keyvaluepair : reverse_min_distances) {
+    ofs_kmer_distances << "\t" << keyvaluepair.second;
+  }
+  ofs_kmer_distances << endl;
 }
 
 map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance) {
