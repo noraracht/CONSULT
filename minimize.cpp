@@ -16,7 +16,7 @@
 
 using namespace std;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   auto start = chrono::steady_clock::now();
   srand(time(NULL));
 
@@ -139,8 +139,7 @@ int main(int argc, char *argv[]) {
   // Recording end time.
   auto end = chrono::steady_clock::now();
   cout << "-- Done writing. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds." << endl;
+       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl;
 
   return 0;
 }

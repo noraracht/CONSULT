@@ -41,31 +41,30 @@
 using namespace std;
 
 // Prototypes.
-vector<string> list_dir(const char *path);
+vector<string> list_dir(const char* path);
 uint8_t hd(uint64_t x, uint64_t y);
 uint8_t get_enc_id(uint64_t sind, uint8_t enc_arr_id[]);
-uint64_t encode_kmer_bits_reverse(const char *s, vector<int> pos);
-uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
-                          vector<int8_t> bits_to_grab);
+uint64_t encode_kmer_bits_reverse(const char* s, vector<int> pos);
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts, vector<int8_t> bits_to_grab);
 
-void encode_kmer(const char s[], uint64_t &b_enc, uint64_t &b_sig);
-void encode_kmer_reverse(const char s[], uint64_t &b_enc, uint64_t &b_sig);
+void encode_kmer(const char s[], uint64_t& b_enc, uint64_t& b_sig);
+void encode_kmer_reverse(const char s[], uint64_t& b_enc, uint64_t& b_sig);
 
-void update_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig);
-void update_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig);
+void update_kmer(const char* s, uint64_t& b_enc, uint64_t& b_sig);
+void update_kmer_reverse(const char* s, uint64_t& b_enc, uint64_t& b_sig);
 
-void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
-                    bool &kmer_found, bool &exact_match, uint8_t &num_matched);
+void check_distance(uint8_t& dist, uint64_t& p, uint8_t& min_dist, bool& kmer_found,
+                    bool& exact_match, uint8_t& num_matched);
 
-void output_reads(ofstream &ofs_reads, string name, string orig_read,
-                  string line_third, string line_fourth);
-void output_distances(ofstream &ofs_kmer_distances, string name,
+void output_reads(ofstream& ofs_reads, string name, string orig_read, string line_third,
+                  string line_fourth);
+void output_distances(ofstream& ofs_kmer_distances, string name,
                       map<uint64_t, uint64_t> min_distances,
                       map<uint64_t, uint64_t> reverse_min_distances);
 
 map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance);
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   auto start = chrono::steady_clock::now();
 
   // Display version number.
@@ -142,8 +141,7 @@ int main(int argc, char *argv[]) {
         break;
       case 'c':
         if (atoi(optarg) < 1) {
-          cout << "Value of -c (--number-of-matches) cannot be smaller than 1."
-               << endl;
+          cout << "Value of -c (--number-of-matches) cannot be smaller than 1." << endl;
           exit(1);
         }
         c = atoi(optarg); // Default is 1.
@@ -195,7 +193,7 @@ int main(int argc, char *argv[]) {
   string map_meta = "meta";
   string path = input_library_dir + '/' + map_meta;
 
-  FILE *fmeta = fopen(path.c_str(), "rb");
+  FILE* fmeta = fopen(path.c_str(), "rb");
   if (!fmeta) {
     cout << "Cannot open the metadata file of the input library!" << endl;
     return 1;
@@ -382,46 +380,46 @@ int main(int argc, char *argv[]) {
   fclose(fmeta);
 
   // Allocate signature array.
-  uint32_t *sigs_arr;
+  uint32_t* sigs_arr;
   try {
     sigs_arr = new uint32_t[sigs_arr_size];
     cout << "Done memory allocation for signature array." << endl;
-  } catch (bad_alloc &ba) {
+  } catch (bad_alloc& ba) {
     cerr << "Failed to allocate memory for signatures." << ba.what() << endl;
   }
 
   // Allocate tag array.
-  int8_t *tag_arr;
+  int8_t* tag_arr;
   try {
     tag_arr = new int8_t[new_tag_arr_size];
     cout << "Done memory allocation for the tag array." << endl;
-  } catch (bad_alloc &ba) {
+  } catch (bad_alloc& ba) {
     cerr << "Failed to allocate memory for tags." << ba.what() << endl;
   }
 
   // Allocate and read encoding array.
-  uint64_t *encode_arr_0;
+  uint64_t* encode_arr_0;
   try {
     encode_arr_0 = new uint64_t[encli_0];
     cout << "Done memory allocation for the array-0." << endl;
-  } catch (bad_alloc &ba) {
+  } catch (bad_alloc& ba) {
     cerr << "Failed to allocate memory for array-0." << ba.what() << endl;
   }
 
-  uint64_t *encode_arr_1;
+  uint64_t* encode_arr_1;
   try {
     encode_arr_1 = new uint64_t[encli_1];
     cout << "Done memory allocation for the array-1." << endl;
-  } catch (bad_alloc &ba) {
+  } catch (bad_alloc& ba) {
     cerr << "Failed to allocate memory for array-1." << ba.what() << endl;
   }
 
   // Allocate enc array id array.
-  uint8_t *enc_arr_id;
+  uint8_t* enc_arr_id;
   try {
     enc_arr_id = new uint8_t[enc_arr_id_size];
     cout << "Done memory allocation for the encoding array." << endl;
-  } catch (bad_alloc &ba) {
+  } catch (bad_alloc& ba) {
     cerr << "Failed to allocate memory for encodings." << ba.what() << endl;
   }
 
@@ -471,17 +469,16 @@ int main(int argc, char *argv[]) {
   {
 #pragma omp for
     for (int m = 0; m < sigf_chunks; m++) {
-      FILE *f;
+      FILE* f;
       f = fopen(str_map_sig[m].c_str(), "rb");
       if (!f) {
-        cout << "Cannot open file for some signatures in the library directory!"
-             << endl;
+        cout << "Cannot open file for some signatures in the library directory!" << endl;
         exit(1);
       }
 
       // Read signs.
-      temp_count = fread(sigs_arr + sig_chunk_cumcounts[m], sizeof(uint32_t),
-                         sig_chunk_counts[m], f);
+      temp_count =
+          fread(sigs_arr + sig_chunk_cumcounts[m], sizeof(uint32_t), sig_chunk_counts[m], f);
 #pragma omp atomic
       total_sigs_read += temp_count;
 
@@ -494,17 +491,16 @@ int main(int argc, char *argv[]) {
   {
 #pragma omp for
     for (int m = 0; m < tagf_chunks; m++) {
-      FILE *ftag;
+      FILE* ftag;
       ftag = fopen(str_map_tag[m].c_str(), "rb");
       if (!ftag) {
-        cout << "Cannot open file for some tags in the library directory!"
-             << endl;
+        cout << "Cannot open file for some tags in the library directory!" << endl;
         exit(1);
       }
 
       // Read tags.
-      temp_count = fread(tag_arr + tag_chunk_cumcounts[m], sizeof(int8_t),
-                         tag_chunk_counts[m], ftag);
+      temp_count =
+          fread(tag_arr + tag_chunk_cumcounts[m], sizeof(int8_t), tag_chunk_counts[m], ftag);
 #pragma omp atomic
       total_tags_read += temp_count;
 
@@ -517,17 +513,16 @@ int main(int argc, char *argv[]) {
   {
 #pragma omp for
     for (int m = 0; m < encf_chunks; m++) {
-      FILE *fenc;
+      FILE* fenc;
       fenc = fopen(str_map_enc[m].c_str(), "rb");
       if (!fenc) {
-        cout << "Cannot open file for some encodings in the library directory!"
-             << endl;
+        cout << "Cannot open file for some encodings in the library directory!" << endl;
         exit(1);
       }
 
       // Read encodings.
-      temp_count = fread(encode_arr_0 + enc_chunk_cumcounts_0[m],
-                         sizeof(uint64_t), enc_chunk_counts_0[m], fenc);
+      temp_count = fread(encode_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint64_t),
+                         enc_chunk_counts_0[m], fenc);
 #pragma omp atomic
       num_pairs_0 += temp_count;
 
@@ -541,15 +536,15 @@ int main(int argc, char *argv[]) {
 #pragma omp for
     for (int m = 0; m < encf_chunks; m++) {
       // Open encode file.
-      FILE *fence;
+      FILE* fence;
       fence = fopen(str_map_ence[m].c_str(), "rb");
       if (!fence) {
         cout << "Cannot open file for some encodings-e in the library!" << endl;
       }
 
       // Read encodings.
-      temp_count = fread(encode_arr_1 + enc_chunk_cumcounts_1[m],
-                         sizeof(uint64_t), enc_chunk_counts_1[m], fence);
+      temp_count = fread(encode_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint64_t),
+                         enc_chunk_counts_1[m], fence);
 #pragma omp atomic
       num_pairs_1 += temp_count;
 
@@ -558,22 +553,20 @@ int main(int argc, char *argv[]) {
   }
 
 // Read enc_id array.
-#pragma omp parallel num_threads(thread_count)                                 \
-    shared(enc_arr_id, total_enc_id_read)
+#pragma omp parallel num_threads(thread_count) shared(enc_arr_id, total_enc_id_read)
   {
 #pragma omp for
     for (int m = 0; m < sigf_chunks; m++) {
-      FILE *fenc_id;
+      FILE* fenc_id;
       fenc_id = fopen(str_map_enc_id[m].c_str(), "rb");
       if (!fenc_id) {
-        cout << "Cannot open file for some encodings ID in the library!"
-             << endl;
+        cout << "Cannot open file for some encodings ID in the library!" << endl;
         exit(1);
       }
 
       // Read sigs.
-      temp_count = fread(enc_arr_id + enc_id_chunk_cumcounts[m],
-                         sizeof(uint8_t), enc_id_chunk_counts[m], fenc_id);
+      temp_count = fread(enc_arr_id + enc_id_chunk_cumcounts[m], sizeof(uint8_t),
+                         enc_id_chunk_counts[m], fenc_id);
 #pragma omp atomic
       total_enc_id_read += temp_count;
 
@@ -592,23 +585,17 @@ int main(int argc, char *argv[]) {
 
   auto end = chrono::steady_clock::now();
   cout << "Done reading. Now matching. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds." << endl;
+       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl;
 
   /* string library_name = */
   /*     input_library_dir.substr(input_library_dir.find_last_of("/\\") + 1);
    */
 
-  string query_fastq_truct =
-      query_fastq_file.substr(query_fastq_file.find_last_of("/") + 1);
-  query_fastq_truct =
-      query_fastq_truct.substr(0, query_fastq_truct.find_last_of("."));
-  string output_unclassified_path =
-      output_dir + "/" + "unclassified-seq_" + query_fastq_truct;
-  string output_classified_path =
-      output_dir + "/" + "classified-seq_" + query_fastq_truct;
-  string output_distances_path =
-      output_dir + "/" + "kmer-distances_" + query_fastq_truct;
+  string query_fastq_truct = query_fastq_file.substr(query_fastq_file.find_last_of("/") + 1);
+  query_fastq_truct = query_fastq_truct.substr(0, query_fastq_truct.find_last_of("."));
+  string output_unclassified_path = output_dir + "/" + "unclassified-seq_" + query_fastq_truct;
+  string output_classified_path = output_dir + "/" + "classified-seq_" + query_fastq_truct;
+  string output_distances_path = output_dir + "/" + "kmer-distances_" + query_fastq_truct;
 
   // Read input fastq.
   ifstream ifs_reads_query(query_fastq_file);
@@ -675,10 +662,8 @@ int main(int argc, char *argv[]) {
       uint8_t num_matched = 0;
       uint8_t num_matched_reverse = 0;
 
-      map<uint64_t, uint64_t> min_distances =
-          init_distance_map(maximum_distance);
-      map<uint64_t, uint64_t> reverse_min_distances =
-          init_distance_map(maximum_distance);
+      map<uint64_t, uint64_t> min_distances = init_distance_map(maximum_distance);
+      map<uint64_t, uint64_t> reverse_min_distances = init_distance_map(maximum_distance);
 
       string orig_read = curr_read;
       istringstream iss(curr_read);
@@ -692,13 +677,13 @@ int main(int argc, char *argv[]) {
           for (uint64_t i = 0; i < token.length(); i++) {
             if (i == 0) {
               string kmer_str = token.substr(i, int(k));
-              const char *ckmer = kmer_str.c_str();
+              const char* ckmer = kmer_str.c_str();
               encode_kmer(ckmer, b_enc, b_sig);
               i = k - 1;
 
             } else {
               string kmer_str = token.substr(i, 1);
-              const char *ckmer = kmer_str.c_str();
+              const char* ckmer = kmer_str.c_str();
               update_kmer(ckmer, b_enc, b_sig);
             }
 
@@ -707,8 +692,7 @@ int main(int argc, char *argv[]) {
             uint8_t min_dist = KMER_LENGTH;
 
             for (int64_t funci = 0; funci < l; funci++) {
-              kmer_sig =
-                  encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
+              kmer_sig = encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 
               // Get first 2 bits of signature (effectively bits 28 - 27) of
               // 32 bit encoding as partition numbers.
@@ -731,20 +715,16 @@ int main(int argc, char *argv[]) {
 
                 for (uint64_t enc = enc_start; enc < enc_end; enc++) {
                   // Set encoding array id.
-                  enc_arr_ind =
-                      get_enc_id(b * f_tmp + b * s_tmp + enc, enc_arr_id);
+                  enc_arr_ind = get_enc_id(b * f_tmp + b * s_tmp + enc, enc_arr_id);
 
                   if (enc_arr_ind == 0) {
-                    test_enc =
-                        encode_arr_0[sigs_arr[b * f_tmp + b * s_tmp + enc]];
+                    test_enc = encode_arr_0[sigs_arr[b * f_tmp + b * s_tmp + enc]];
                   } else {
-                    test_enc =
-                        encode_arr_1[sigs_arr[b * f_tmp + b * s_tmp + enc]];
+                    test_enc = encode_arr_1[sigs_arr[b * f_tmp + b * s_tmp + enc]];
                   }
 
                   uint8_t dist = hd(b_enc, test_enc);
-                  check_distance(dist, p, min_dist, kmer_found, exact_match,
-                                 num_matched);
+                  check_distance(dist, p, min_dist, kmer_found, exact_match, num_matched);
 
                   // For each signature pointed row.
                   if (kmer_found && (!save_distances || exact_match)) {
@@ -793,12 +773,12 @@ int main(int argc, char *argv[]) {
             for (uint64_t i = 0; i < token.length(); i++) {
               if (i == 0) {
                 string kmer_str = token.substr(i, int(k));
-                const char *ckmer = kmer_str.c_str();
+                const char* ckmer = kmer_str.c_str();
                 encode_kmer_reverse(ckmer, b_enc, b_sig);
                 i = k - 1;
               } else {
                 string kmer_str = token.substr(i, 1);
-                const char *ckmer = kmer_str.c_str();
+                const char* ckmer = kmer_str.c_str();
                 update_kmer_reverse(ckmer, b_enc, b_sig);
               }
 
@@ -807,8 +787,7 @@ int main(int argc, char *argv[]) {
               uint8_t min_dist = KMER_LENGTH;
 
               for (uint64_t funci = 0; funci < l; funci++) {
-                kmer_sig =
-                    encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
+                kmer_sig = encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 
                 // Get first 2 bits of signature (effectively bits 28 - 27)
                 // of 32 bit encoding as partition numbers.
@@ -830,20 +809,16 @@ int main(int argc, char *argv[]) {
                   enc_end = tag_arr[f_tmp + s_tmp + tag];
 
                   for (uint64_t enc = enc_start; enc < enc_end; enc++) {
-                    enc_arr_ind =
-                        get_enc_id(b * f_tmp + b * s_tmp + enc, enc_arr_id);
+                    enc_arr_ind = get_enc_id(b * f_tmp + b * s_tmp + enc, enc_arr_id);
 
                     if (enc_arr_ind == 0) {
-                      test_enc =
-                          encode_arr_0[sigs_arr[f_tmp * b + b * s_tmp + enc]];
+                      test_enc = encode_arr_0[sigs_arr[f_tmp * b + b * s_tmp + enc]];
                     } else {
-                      test_enc =
-                          encode_arr_1[sigs_arr[f_tmp * b + s_tmp * b + enc]];
+                      test_enc = encode_arr_1[sigs_arr[f_tmp * b + s_tmp * b + enc]];
                     }
 
                     uint8_t dist = hd(b_enc, test_enc);
-                    check_distance(dist, p, min_dist, kmer_found, exact_match,
-                                   num_matched_reverse);
+                    check_distance(dist, p, min_dist, kmer_found, exact_match, num_matched_reverse);
 
                     // For each signature pointed row.
                     if (kmer_found && (!save_distances || exact_match)) {
@@ -874,36 +849,26 @@ int main(int argc, char *argv[]) {
 
       if (save_distances) {
 #pragma omp critical
-        {
-          output_distances(ofs_kmer_distances, name, min_distances,
-                           reverse_min_distances);
-        }
+        { output_distances(ofs_kmer_distances, name, min_distances, reverse_min_distances); }
       }
 
       if ((num_matched < c) && (num_matched_reverse < c)) {
         if (unclassified_out) {
 #pragma omp critical
-          {
-            output_reads(ofs_reads_unclassified, name, orig_read, line_third,
-                         line_fourth);
-          }
+          { output_reads(ofs_reads_unclassified, name, orig_read, line_third, line_fourth); }
         }
       } else if ((num_matched >= c) || (num_matched_reverse >= c)) {
 #pragma omp atomic
         reads_matched += 1;
         if (classified_out) {
 #pragma omp critical
-          {
-            output_reads(ofs_reads_classified, name, orig_read, line_third,
-                         line_fourth);
-          }
+          { output_reads(ofs_reads_classified, name, orig_read, line_third, line_fourth); }
         }
       }
     }
   }
 
-  cout << query_fastq_file << " " << num_lines_read << " " << reads_matched
-       << endl;
+  cout << query_fastq_file << " " << num_lines_read << " " << reads_matched << endl;
 
   ifs_reads_query.close();
 
@@ -923,15 +888,14 @@ int main(int argc, char *argv[]) {
 
   end = chrono::steady_clock::now();
   cout << "Done matching for all. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds." << endl;
+       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl;
 
   return 0;
 }
 
 // Function definitions.
 
-void encode_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
+void encode_kmer(const char* s, uint64_t& b_enc, uint64_t& b_sig) {
   for (int i = 0; i < int(KMER_LENGTH); i++) {
     b_enc = b_enc << 1;
     b_sig = b_sig << 2;
@@ -952,7 +916,7 @@ void encode_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
   }
 }
 
-void encode_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
+void encode_kmer_reverse(const char* s, uint64_t& b_enc, uint64_t& b_sig) {
   for (int i = 0; i < int(KMER_LENGTH); i++) {
     b_enc = b_enc << 1;
     b_sig = b_sig << 2;
@@ -973,7 +937,7 @@ void encode_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
   }
 }
 
-void update_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
+void update_kmer(const char* s, uint64_t& b_enc, uint64_t& b_sig) {
   b_enc = b_enc << 1;
   b_sig = b_sig << 2;
 
@@ -996,7 +960,7 @@ void update_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
   }
 }
 
-void update_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
+void update_kmer_reverse(const char* s, uint64_t& b_enc, uint64_t& b_sig) {
   b_enc = b_enc << 1;
   b_sig = b_sig << 2;
 
@@ -1026,14 +990,13 @@ uint8_t hd(uint64_t x, uint64_t y) {
   return __builtin_popcount(zc);
 }
 
-vector<string> list_dir(const char *path) {
+vector<string> list_dir(const char* path) {
   vector<string> userString;
-  struct dirent *entry;
-  DIR *dir = opendir(path);
+  struct dirent* entry;
+  DIR* dir = opendir(path);
 
   while ((entry = readdir(dir)) != NULL) {
-    if ((strcmp(entry->d_name, "..") != 0) &&
-        (strcmp(entry->d_name, ".") != 0)) {
+    if ((strcmp(entry->d_name, "..") != 0) && (strcmp(entry->d_name, ".") != 0)) {
       userString.push_back(string(path) + "/" + entry->d_name);
     }
   }
@@ -1042,24 +1005,20 @@ vector<string> list_dir(const char *path) {
   return (userString);
 }
 
-uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
-                          vector<int8_t> bits_to_grab) {
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts, vector<int8_t> bits_to_grab) {
   uint64_t res = 0;
   int i = 0;
 
   while (shifts[i] != -1) {
     val = val << shifts[i];
-    asm("shld %b3, %2, %0"
-        : "=rm"(res)
-        : "0"(res), "r"(val), "ic"(bits_to_grab[i])
-        : "cc");
+    asm("shld %b3, %2, %0" : "=rm"(res) : "0"(res), "r"(val), "ic"(bits_to_grab[i]) : "cc");
 
     i++;
   }
   return uint64_t(res);
 }
 
-uint64_t encode_kmer_bits_reverse(const char *s, vector<int> pos) {
+uint64_t encode_kmer_bits_reverse(const char* s, vector<int> pos) {
   uint64_t d = 0;
   for (int i = 0; i < pos.size(); i++) {
     d = d << 2;
@@ -1086,8 +1045,8 @@ uint8_t get_enc_id(uint64_t sind, uint8_t enc_arr_id[]) {
   return (enc_arr_ind);
 }
 
-void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
-                    bool &kmer_found, bool &exact_match, uint8_t &num_matched) {
+void check_distance(uint8_t& dist, uint64_t& p, uint8_t& min_dist, bool& kmer_found,
+                    bool& exact_match, uint8_t& num_matched) {
   if ((!kmer_found) && (dist <= p)) {
     kmer_found = true;
     num_matched += 1;
@@ -1098,8 +1057,8 @@ void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
   exact_match = dist == 0;
 }
 
-void output_reads(ofstream &ofs_reads, string name, string orig_read,
-                  string line_third, string line_fourth) {
+void output_reads(ofstream& ofs_reads, string name, string orig_read, string line_third,
+                  string line_fourth) {
   ofs_reads << name << endl;
   ofs_reads << orig_read << endl;
   // Output separator and quality.
@@ -1107,7 +1066,7 @@ void output_reads(ofstream &ofs_reads, string name, string orig_read,
   ofs_reads << line_fourth << endl;
 }
 
-void output_distances(ofstream &ofs_kmer_distances, string name,
+void output_distances(ofstream& ofs_kmer_distances, string name,
                       map<uint64_t, uint64_t> min_distances,
                       map<uint64_t, uint64_t> reverse_min_distances) {
   ofs_kmer_distances << name << "\t"
