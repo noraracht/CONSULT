@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 
   while (1) {
     static struct option long_options[] = {
-        {"input-fasta-file", 1, 0, 'i'},     {"output-library-directory", 1, 0, 'o'},
+        {"input-fasta-file", 1, 0, 'i'},     {"output-library-dir", 1, 0, 'o'},
         {"number-of-postitions", 1, 0, 'h'}, {"tag-size", 1, 0, 't'},
         {"distance-threshold", 1, 0, 'p'},   {"number-of-tables", 1, 0, 'l'},
         {"column-per-tag", 1, 0, 'b'},       {0, 0, 0, 0},
