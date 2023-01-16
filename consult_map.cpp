@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) {
   uint64_t sigs_row_count = pow(2, 2 * h - t); // # of rows; 2^(2h-t)
   memory_usage_min = (float)(4 * b * pow(2, 2 * h) * l + 8 * kmer_count) / pow(10.0, 9);
 
-  assert(t > 1);
+  assert(t > 0);
   assert(p >= 0);
   assert(l >= 1);
   assert(h >= 1);

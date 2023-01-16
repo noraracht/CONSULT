@@ -31,7 +31,7 @@ search:
 		-c 1 \
 		--thread-count 1 \
 		--unclassified-out --classified-out \
-		--save-distances --maximum-distance 5
+		--save-distances
 
 map:
 	@echo -e "\n===COMPILING===\n"

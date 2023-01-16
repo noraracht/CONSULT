@@ -11,8 +11,8 @@
 #include <time.h>
 
 #define VERSION 3.0
-#define SL 35
-#define MINIMIZER 32
+#define CANONICAL_KMER_LENGTH 35
+#define MINIMIZER_KMER_LENGTH 32
 
 using namespace std;
 
@@ -95,8 +95,8 @@ int main(int argc, char* argv[]) {
   }
   cout << "Output file : " << output_fasta_file << endl << endl;
 
-  cout << "SL (k-mer length) = " << int(SL) << endl;
-  cout << "Minimizer length = " << MINIMIZER << endl << endl;
+  cout << "CANONICAL_KMER_LENGTH (k-mer length) = " << int(CANONICAL_KMER_LENGTH) << endl;
+  cout << "Minimizer length = " << MINIMIZER_KMER_LENGTH << endl << endl;
 
   string line;
   string name;
@@ -108,10 +108,10 @@ int main(int argc, char* argv[]) {
       name = line;
     }
     if (line.rfind('>', 0) != 0) {
-      std::string min_str(MINIMIZER, 'Z');
+      std::string min_str(MINIMIZER_KMER_LENGTH, 'Z');
 
-      for (uint64_t i = 0; i < line.length() - MINIMIZER + 1; i++) {
-        string kmer_str = line.substr(i, int(MINIMIZER));
+      for (uint64_t i = 0; i < line.length() - MINIMIZER_KMER_LENGTH + 1; i++) {
+        string kmer_str = line.substr(i, int(MINIMIZER_KMER_LENGTH));
         if (kmer_str < min_str) {
           min_str = kmer_str;
         }
