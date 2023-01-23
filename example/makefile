@@ -3,10 +3,11 @@ all: clean minimize map search
 clean:
 	@make clean -C ..
 	[ ! -e k32C_af_mininimization.fa   ] || rm k32C_af_mininimization.fa
-	[ ! -e G000307305_nbr_mapping      ] || rm -r G000307305_nbr_mapping
+	[ ! -e G000307305_nbr_mapping      ] || rm -Ir G000307305_nbr_mapping
 	[ ! -e classified-seq_G000307305   ] || rm classified-seq_G000307305
 	[ ! -e unclassified-seq_G000307305 ] || rm unclassified-seq_G000307305
 	[ ! -e kmer-distances_G000307305   ] || rm kmer-distances_G000307305
+	[ ! -e match-info_G000307305			 ] || rm match-info_G000307305
 
 minimize:
 	@echo -e "\n===COMPILING===\n"
@@ -29,9 +30,11 @@ search:
 		-i "G000307305_nbr_mapping" \
 		-o "." \
 		-c 1 \
-		--thread-count 1 \
+		--thread-count 8 \
 		--unclassified-out --classified-out \
-		--save-distances
+		# --init-index
+		# --update-index
+		# --save-distances --save-matches
 
 map:
 	@echo -e "\n===COMPILING===\n"
@@ -44,4 +47,5 @@ map:
 		-i "k32C_af_mininimization.fa" \
 		-o "G000307305_nbr_mapping" \
 		-p 3 \
-		-t 2
+		-t 2 \
+		--create-index
