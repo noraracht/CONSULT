@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
   }
   if ((init_index && update_index) || (init_index && save_matches) ||
       (update_index && save_matches)) {
-    cout << "Can only do one of initilizae, update or save at a time." << endl;
+    cout << "Can only do one of initialize, update or save at a time." << endl;
     exit(1);
   }
 
@@ -224,11 +224,14 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  if (!(classified_out || unclassified_out || save_distances)) {
+  if (!(classified_out || unclassified_out || save_distances || init_index ||
+        update_index || save_matches)) {
     cout << "Nothing to do! Use at least one of the following flags:" << endl;
     cout << "'--classified-out' to report classified reads," << endl;
     cout << "'--unclassified-out' to report unclassified reads," << endl;
-    cout << "'--save-distances' to save distances of matched k-mers." << endl;
+    cout << "'--init-index' to initialize taxonomic index array." << endl;
+    cout << "'--update-index' to compute taxonomic labels for k-mers." << endl;
+    cout << "'--save-matches' to save matched labels and distances." << endl;
     exit(1);
   }
 
@@ -1585,14 +1588,15 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
                         uint8_t enc_arr_ind, uint32_t encoding_idx,
                         uint16_t filename_index,
                         vector<vector<uint16_t>> &lookup_table) {
-  double p_update;
-  float m = 6.0;
+  float p_update;
+  float m = 5.0;
+  float s = 3.0;
   random_device device;
   mt19937 gen(device());
   if (enc_arr_ind == 0) {
-    p_update = min(
-        1.0, pow(1.0 / m, 2) +
-                 (2.0 / max(2.0, 2.0 + (double)count_arr_0[encoding_idx] - m)));
+    p_update =
+        min(1.0, pow(1.0 / m, 2) +
+                     (s / max(s, s + (float)count_arr_0[encoding_idx] - m)));
     bernoulli_distribution btrial(p_update);
     bool update = btrial(gen);
     if (update) {
@@ -1605,9 +1609,9 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
       }
     }
   } else {
-    p_update = min(
-        1.0, pow(1.0 / m, 2) +
-                 (2.0 / max(2.0, 2.0 + (double)count_arr_1[encoding_idx] - m)));
+    p_update =
+        min(1.0, pow(1.0 / m, 2) +
+                     (s / max(s, s + (float)count_arr_1[encoding_idx] - m)));
     bernoulli_distribution btrial(p_update);
     bool update = btrial(gen);
     if (update) {

@@ -30,10 +30,10 @@ search:
 		-i "G000307305_nbr_mapping" \
 		-o "." \
 		-c 1 \
-		--thread-count 8 \
-		--unclassified-out --classified-out \
+		--thread-count 24
 		# --init-index
 		# --update-index
+		# --unclassified-out --classified-out
 		# --save-distances --save-matches
 
 map:
@@ -47,5 +47,4 @@ map:
 		-i "k32C_af_mininimization.fa" \
 		-o "G000307305_nbr_mapping" \
 		-p 3 \
-		-t 2 \
-		--create-index
+		-t 2
