@@ -206,7 +206,8 @@ int main(int argc, char *argv[]) {
 
   /* Heuristic for determining parameters. */
   float alpha = 0.45;
-  float d = (float)p / k;
+  float d = ((float)p) / k;
+  float f_kmer_count = (7.0 / 8.0) * kmer_count;
   float memory_usage_min = numeric_limits<float>::max();
 
   float memory_usage_tmp;
@@ -217,12 +218,12 @@ int main(int argc, char *argv[]) {
     if (given_b)
       b_tmp = b;
     if (!given_h)
-      h_tmp = max(4.0, ceil(0.5 * log2(((float)kmer_count) / b_tmp)));
+      h_tmp = max(4.0, ceil(0.5 * log2((f_kmer_count) / b_tmp)));
     if (!given_l)
       l_tmp =
           max(2.0, round(log(1.0 - alpha) / log(1.0 - pow(1.0 - d, h_tmp))));
     memory_usage_tmp =
-        (float)(4 * b_tmp * pow(2, 2 * h_tmp) * l + 8 * kmer_count) /
+        (4.0 * b_tmp * pow(2, 2 * h_tmp) * l + 8.0 * f_kmer_count) /
         pow(10.0, 9);
     if (memory_usage_tmp < memory_usage_min) {
       h = h_tmp;
@@ -626,6 +627,7 @@ int main(int argc, char *argv[]) {
   // Write p, l, h values.
   fwrite(&p, sizeof(uint64_t), 1, wfmeta);
   fwrite(&l, sizeof(uint64_t), 1, wfmeta);
+  fwrite(&alpha, sizeof(float), 1, wfmeta);
   fwrite(&h, sizeof(uint64_t), 1, wfmeta);
 
   fwrite(&sigs_arr_size, sizeof(uint64_t), 1, wfmeta);
@@ -817,7 +819,7 @@ int main(int argc, char *argv[]) {
     fwrite(&enc_id_chunk_counts[m], sizeof(uint64_t), 1, wfmeta);
 
     // Open sig file.
-    string map_enc_id = "enc_id" + to_string(m);
+    string map_enc_id = "encid" + to_string(m);
     path = output_library_dir + "/" + map_enc_id;
 
     FILE *wf;

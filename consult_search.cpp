@@ -82,6 +82,7 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
                         uint16_t filename_index,
                         vector<vector<uint16_t>> &lookup_table);
 void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[],
+                       vector<bool> &counted_0, vector<bool> &counted_1,
                        uint8_t enc_arr_ind, uint32_t encoding_idx);
 
 map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance);
@@ -248,6 +249,7 @@ int main(int argc, char *argv[]) {
   // Read parameters from input file.
   uint64_t p;
   uint64_t l;
+  float alpha;
   uint64_t h;
   uint64_t sigs_arr_size;
   uint64_t new_tag_arr_size;
@@ -258,7 +260,9 @@ int main(int argc, char *argv[]) {
 
   fread(&p, sizeof(uint64_t), 1, fmeta);
   fread(&l, sizeof(uint64_t), 1, fmeta);
+  fread(&alpha, sizeof(float), 1, fmeta);
   fread(&h, sizeof(uint64_t), 1, fmeta);
+
   fread(&sigs_arr_size, sizeof(uint64_t), 1, fmeta);
   fread(&new_tag_arr_size, sizeof(uint64_t), 1, fmeta);
   fread(&kmer_count, sizeof(uint64_t), 1, fmeta);
@@ -575,7 +579,7 @@ int main(int argc, char *argv[]) {
     str_map_counte.push_back(path);
   }
   for (int m = 0; m < sigf_chunks; m++) {
-    string map_enc_id = "enc_id" + to_string(m);
+    string map_enc_id = "encid" + to_string(m);
     path = input_library_dir + "/" + map_enc_id;
     str_map_enc_id.push_back(path);
   }
@@ -813,7 +817,20 @@ int main(int argc, char *argv[]) {
        << chrono::duration_cast<chrono::seconds>(end - start).count()
        << " seconds." << endl;
 
-  for (string query_file_path : query_file_list) {
+  int counter_files = 0;
+  for (int fidx = 0; fidx < query_file_list.size(); ++fidx) {
+    string query_file_path = query_file_list[fidx];
+    cout << counter_files << "/" << query_file_list.size() << endl;
+    counter_files++;
+
+    vector<bool> counted_0;
+    vector<bool> counted_1;
+
+    if (init_index) {
+      counted_0.resize(encli_0, false);
+      counted_1.resize(encli_1, false);
+    }
+
     string query_fastq_truct =
         query_file_path.substr(query_file_path.find_last_of("/") + 1);
     query_fastq_truct =
@@ -987,8 +1004,8 @@ int main(int argc, char *argv[]) {
                     if (init_index && exact_match) {
 #pragma omp critical
                       {
-                        update_kmer_count(count_arr_0, count_arr_1, enc_arr_ind,
-                                          encoding_idx);
+                        update_kmer_count(count_arr_0, count_arr_1, counted_0,
+                                          counted_1, enc_arr_ind, encoding_idx);
                       }
                     }
                     if ((dist == min_dist) && save_matches) {
@@ -1078,8 +1095,8 @@ int main(int argc, char *argv[]) {
                   kmer_sig =
                       encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 
-                  // Get first 2 bits of signature (effectively bits 28 - 27)
-                  // of 32 bit encoding as partition numbers.
+                  // Get first 2 bits of signature (effectively bits 28 -
+                  // 27) of 32 bit encoding as partition numbers.
                   tag = (kmer_sig >> ((2 * h) - t)) & tag_mask;
 
                   // Get last 26 bits of signature (effectively bits 26 -1 )
@@ -1124,8 +1141,9 @@ int main(int argc, char *argv[]) {
                       if (init_index && exact_match) {
 #pragma omp critical
                         {
-                          update_kmer_count(count_arr_0, count_arr_1,
-                                            enc_arr_ind, encoding_idx);
+                          update_kmer_count(count_arr_0, count_arr_1, counted_0,
+                                            counted_1, enc_arr_ind,
+                                            encoding_idx);
                         }
                       }
                       if ((dist == min_dist) && save_matches) {
@@ -1228,21 +1246,6 @@ int main(int argc, char *argv[]) {
       ofs_kmer_distances.close();
     if (save_matches)
       ofs_match_information.close();
-
-    if (update_index) {
-      for (int i = 0; i < 10; ++i) {
-        int rand_index = rand() % encli_0;
-        cout << index_arr_0[rand_index] << endl;
-        cout << index_arr_1[rand_index] << endl;
-      }
-    }
-    if (init_index) {
-      for (int i = 0; i < 100; ++i) {
-        int rand_index = rand() % encli_0;
-        cout << count_arr_0[rand_index] << endl;
-        cout << count_arr_1[rand_index] << endl;
-      }
-    }
   }
 
   if (update_index || init_index) {
@@ -1522,22 +1525,16 @@ void output_matches(ofstream &ofs_match_information, string name,
   ofs_match_information << name << endl;
 
   ofs_match_information << "--";
-  for (uint16_t index : match_indices) {
-    ofs_match_information << " " << index;
-  }
-  ofs_match_information << endl << "--";
-  for (uint16_t dist : match_distances) {
-    ofs_match_information << " " << dist;
+  for (int i = 0; i < match_indices.size(); ++i) {
+    ofs_match_information << " " << match_indices[i] << ":"
+                          << match_distances[i];
   }
   ofs_match_information << endl;
 
   ofs_match_information << "rc";
-  for (uint16_t index : reverse_match_indices) {
-    ofs_match_information << " " << index;
-  }
-  ofs_match_information << endl << "rc";
-  for (uint16_t dist : reverse_match_distances) {
-    ofs_match_information << " " << dist;
+  for (int i = 0; i < reverse_match_indices.size(); ++i) {
+    ofs_match_information << " " << reverse_match_indices[i] << ":"
+                          << reverse_match_distances[i];
   }
   ofs_match_information << endl;
 }
@@ -1589,14 +1586,14 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
                         uint16_t filename_index,
                         vector<vector<uint16_t>> &lookup_table) {
   float p_update;
-  float m = 5.0;
-  float s = 3.0;
+  float w = 5.0;
+  float s = 4.0;
   random_device device;
   mt19937 gen(device());
   if (enc_arr_ind == 0) {
     p_update =
-        min(1.0, pow(1.0 / m, 2) +
-                     (s / max(s, s + (float)count_arr_0[encoding_idx] - m)));
+        min(1.0, pow(1.0 / w, 2) +
+                     (s / max(s, s + (float)count_arr_0[encoding_idx] - w)));
     bernoulli_distribution btrial(p_update);
     bool update = btrial(gen);
     if (update) {
@@ -1610,8 +1607,8 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
     }
   } else {
     p_update =
-        min(1.0, pow(1.0 / m, 2) +
-                     (s / max(s, s + (float)count_arr_1[encoding_idx] - m)));
+        min(1.0, pow(1.0 / w, 2) +
+                     (s / max(s, s + (float)count_arr_1[encoding_idx] - w)));
     bernoulli_distribution btrial(p_update);
     bool update = btrial(gen);
     if (update) {
@@ -1627,10 +1624,17 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
 }
 
 void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[],
+                       vector<bool> &counted_0, vector<bool> &counted_1,
                        uint8_t enc_arr_ind, uint32_t encoding_idx) {
   if (enc_arr_ind == 0) {
-    count_arr_0[encoding_idx]++;
+    if (!counted_0[encoding_idx]) {
+      count_arr_0[encoding_idx]++;
+      counted_0[encoding_idx] = true;
+    }
   } else {
-    count_arr_1[encoding_idx]++;
+    if (!counted_1[encoding_idx]) {
+      count_arr_1[encoding_idx]++;
+      counted_1[encoding_idx] = true;
+    }
   }
 }

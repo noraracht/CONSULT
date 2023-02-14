@@ -30,11 +30,11 @@ search:
 		-i "G000307305_nbr_mapping" \
 		-o "." \
 		-c 1 \
-		--thread-count 24
+		--thread-count 16 \
+		--unclassified-out --classified-out --save-distances \
 		# --init-index
 		# --update-index
-		# --unclassified-out --classified-out
-		# --save-distances --save-matches
+		# --save-matches
 
 map:
 	@echo -e "\n===COMPILING===\n"
