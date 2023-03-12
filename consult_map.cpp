@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
     // Open input file.
     ifstream ifs(input_fasta_file);
     if (!ifs.is_open()) {
-      cout << "Cannot open inout FASTA file!" << endl;
+      cout << "Cannot open input FASTA file!" << endl;
       exit(1);
     }
     while (uint64_t cc = file_read(ifs, buff)) {
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
 
   ifstream ifs(input_fasta_file);
   if (!ifs.is_open()) {
-    cout << "Cannot open inout FASTA file!" << endl;
+    cout << "Cannot open input FASTA file!" << endl;
     exit(1);
   }
 
