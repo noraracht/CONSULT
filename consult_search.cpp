@@ -78,11 +78,12 @@ void read_lookup_table(string filename, vector<vector<uint16_t>> &lookup_table);
 
 void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
                         uint16_t count_arr_0[], uint16_t count_arr_1[],
+                        vector<bool> &seen_0, vector<bool> &seen_1,
                         uint8_t enc_arr_ind, uint32_t encoding_idx,
                         uint16_t filename_index,
                         vector<vector<uint16_t>> &lookup_table);
 void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[],
-                       vector<bool> &counted_0, vector<bool> &counted_1,
+                       vector<bool> &seen_0, vector<bool> &seen_1,
                        uint8_t enc_arr_ind, uint32_t encoding_idx);
 
 map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance);
@@ -823,12 +824,12 @@ int main(int argc, char *argv[]) {
     cout << counter_files << "/" << query_file_list.size() << endl;
     counter_files++;
 
-    vector<bool> counted_0;
-    vector<bool> counted_1;
+    vector<bool> seen_0;
+    vector<bool> seen_1;
 
-    if (init_index) {
-      counted_0.resize(encli_0, false);
-      counted_1.resize(encli_1, false);
+    if (init_index || update_index) {
+      seen_0.resize(encli_0, false);
+      seen_1.resize(encli_1, false);
     }
 
     string query_fastq_truct =
@@ -996,16 +997,16 @@ int main(int argc, char *argv[]) {
 #pragma omp critical
                       {
                         update_class_index(index_arr_0, index_arr_1,
-                                           count_arr_0, count_arr_1,
-                                           enc_arr_ind, encoding_idx,
+                                           count_arr_0, count_arr_1, seen_0,
+                                           seen_1, enc_arr_ind, encoding_idx,
                                            filename_index, lookup_table);
                       }
                     }
                     if (init_index && exact_match) {
 #pragma omp critical
                       {
-                        update_kmer_count(count_arr_0, count_arr_1, counted_0,
-                                          counted_1, enc_arr_ind, encoding_idx);
+                        update_kmer_count(count_arr_0, count_arr_1, seen_0,
+                                          seen_1, enc_arr_ind, encoding_idx);
                       }
                     }
                     if ((dist == min_dist) && save_matches) {
@@ -1133,17 +1134,16 @@ int main(int argc, char *argv[]) {
 #pragma omp critical
                         {
                           update_class_index(index_arr_0, index_arr_1,
-                                             count_arr_0, count_arr_1,
-                                             enc_arr_ind, encoding_idx,
+                                             count_arr_0, count_arr_1, seen_0,
+                                             seen_1, enc_arr_ind, encoding_idx,
                                              filename_index, lookup_table);
                         }
                       }
                       if (init_index && exact_match) {
 #pragma omp critical
                         {
-                          update_kmer_count(count_arr_0, count_arr_1, counted_0,
-                                            counted_1, enc_arr_ind,
-                                            encoding_idx);
+                          update_kmer_count(count_arr_0, count_arr_1, seen_0,
+                                            seen_1, enc_arr_ind, encoding_idx);
                         }
                       }
                       if ((dist == min_dist) && save_matches) {
@@ -1582,6 +1582,7 @@ void read_lookup_table(string filename,
 
 void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
                         uint16_t count_arr_0[], uint16_t count_arr_1[],
+                        vector<bool> &seen_0, vector<bool> &seen_1,
                         uint8_t enc_arr_ind, uint32_t encoding_idx,
                         uint16_t filename_index,
                         vector<vector<uint16_t>> &lookup_table) {
@@ -1591,50 +1592,56 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
   random_device device;
   mt19937 gen(device());
   if (enc_arr_ind == 0) {
-    p_update =
-        min(1.0, pow(1.0 / w, 2) +
-                     (s / max(s, s + (float)count_arr_0[encoding_idx] - w)));
-    bernoulli_distribution btrial(p_update);
-    bool update = btrial(gen);
-    if (update) {
-      if (index_arr_0[encoding_idx] == 0) {
-        index_arr_0[encoding_idx] = filename_index;
-      } else if (index_arr_0[encoding_idx] == 1) {
-      } else {
-        index_arr_0[encoding_idx] =
-            lookup_table[index_arr_0[encoding_idx]][filename_index];
+    if (!seen_0[encoding_idx]) {
+      seen_0[encoding_idx] = true;
+      p_update =
+          min(1.0, pow(1.0 / w, 2) +
+                       (s / max(s, s + (float)count_arr_0[encoding_idx] - w)));
+      bernoulli_distribution btrial(p_update);
+      bool update = btrial(gen);
+      if (update) {
+        if (index_arr_0[encoding_idx] == 0) {
+          index_arr_0[encoding_idx] = filename_index;
+        } else if (index_arr_0[encoding_idx] == 1) {
+        } else {
+          index_arr_0[encoding_idx] =
+              lookup_table[index_arr_0[encoding_idx]][filename_index];
+        }
       }
     }
   } else {
-    p_update =
-        min(1.0, pow(1.0 / w, 2) +
-                     (s / max(s, s + (float)count_arr_1[encoding_idx] - w)));
-    bernoulli_distribution btrial(p_update);
-    bool update = btrial(gen);
-    if (update) {
-      if (index_arr_1[encoding_idx] == 0) {
-        index_arr_1[encoding_idx] = filename_index;
-      } else if (index_arr_1[encoding_idx] == 1) {
-      } else {
-        index_arr_1[encoding_idx] =
-            lookup_table[index_arr_1[encoding_idx]][filename_index];
+    if (!seen_1[encoding_idx]) {
+      seen_1[encoding_idx] = true;
+      p_update =
+          min(1.0, pow(1.0 / w, 2) +
+                       (s / max(s, s + (float)count_arr_1[encoding_idx] - w)));
+      bernoulli_distribution btrial(p_update);
+      bool update = btrial(gen);
+      if (update) {
+        if (index_arr_1[encoding_idx] == 0) {
+          index_arr_1[encoding_idx] = filename_index;
+        } else if (index_arr_1[encoding_idx] == 1) {
+        } else {
+          index_arr_1[encoding_idx] =
+              lookup_table[index_arr_1[encoding_idx]][filename_index];
+        }
       }
     }
   }
 }
 
 void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[],
-                       vector<bool> &counted_0, vector<bool> &counted_1,
+                       vector<bool> &seen_0, vector<bool> &seen_1,
                        uint8_t enc_arr_ind, uint32_t encoding_idx) {
   if (enc_arr_ind == 0) {
-    if (!counted_0[encoding_idx]) {
+    if (!seen_0[encoding_idx]) {
       count_arr_0[encoding_idx]++;
-      counted_0[encoding_idx] = true;
+      seen_0[encoding_idx] = true;
     }
   } else {
-    if (!counted_1[encoding_idx]) {
+    if (!seen_1[encoding_idx]) {
       count_arr_1[encoding_idx]++;
-      counted_1[encoding_idx] = true;
+      seen_1[encoding_idx] = true;
     }
   }
 }
