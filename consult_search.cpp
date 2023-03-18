@@ -50,8 +50,7 @@ vector<string> list_dir(const char *path);
 uint8_t hd(uint64_t x, uint64_t y);
 uint8_t get_enc_id(uint64_t sind, uint8_t enc_arr_id[]);
 uint64_t encode_kmer_bits_reverse(const char *s, vector<int> pos);
-uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
-                          vector<int8_t> bits_to_grab);
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts, vector<int8_t> bits_to_grab);
 
 void encode_kmer(const char s[], uint64_t &b_enc, uint64_t &b_sig);
 void encode_kmer_reverse(const char s[], uint64_t &b_enc, uint64_t &b_sig);
@@ -59,31 +58,23 @@ void encode_kmer_reverse(const char s[], uint64_t &b_enc, uint64_t &b_sig);
 void update_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig);
 void update_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig);
 
-void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
-                    bool &kmer_found, bool &exact_match, uint8_t &num_matched);
+void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist, bool &kmer_found, bool &exact_match,
+                    uint8_t &num_matched);
 
-void output_reads(ofstream &ofs_reads, string name, string orig_read,
-                  string line_third, string line_fourth);
-void output_distances(ofstream &ofs_kmer_distances, string name,
-                      map<uint64_t, uint64_t> min_distances,
+void output_reads(ofstream &ofs_reads, string name, string orig_read, string line_third, string line_fourth);
+void output_distances(ofstream &ofs_kmer_distances, string name, map<uint64_t, uint64_t> min_distances,
                       map<uint64_t, uint64_t> reverse_min_distances);
-void output_matches(ofstream &ofs_match_information, string name,
-                    vector<uint16_t> match_indices,
-                    vector<uint16_t> match_distances,
-                    vector<uint16_t> reverse_match_indices,
+void output_matches(ofstream &ofs_match_information, string name, vector<uint16_t> match_indices,
+                    vector<uint16_t> match_distances, vector<uint16_t> reverse_match_indices,
                     vector<uint16_t> reverse_match_distances);
 
 void read_filename_map(string filename, map<string, uint16_t> &filename_map);
 void read_lookup_table(string filename, vector<vector<uint16_t>> &lookup_table);
 
-void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
-                        uint16_t count_arr_0[], uint16_t count_arr_1[],
-                        vector<bool> &seen_0, vector<bool> &seen_1,
-                        uint8_t enc_arr_ind, uint32_t encoding_idx,
-                        uint16_t filename_index,
-                        vector<vector<uint16_t>> &lookup_table);
-void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[],
-                       vector<bool> &seen_0, vector<bool> &seen_1,
+void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[], uint16_t count_arr_0[], uint16_t count_arr_1[],
+                        vector<bool> &seen_0, vector<bool> &seen_1, uint8_t enc_arr_ind, uint32_t encoding_idx,
+                        uint16_t filename_index, vector<vector<uint16_t>> &lookup_table);
+void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1,
                        uint8_t enc_arr_ind, uint32_t encoding_idx);
 
 map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance);
@@ -179,8 +170,7 @@ int main(int argc, char *argv[]) {
         break;
       case 'c':
         if (atoi(optarg) < 1) {
-          cout << "Value of -c (--number-of-matches) cannot be smaller than 1."
-               << endl;
+          cout << "Value of -c (--number-of-matches) cannot be smaller than 1." << endl;
           exit(1);
         }
         c = atoi(optarg); // Default is 1.
@@ -206,8 +196,7 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  if ((init_index && update_index) || (init_index && save_matches) ||
-      (update_index && save_matches)) {
+  if ((init_index && update_index) || (init_index && save_matches) || (update_index && save_matches)) {
     cout << "Can only do one of initialize, update or save at a time." << endl;
     exit(1);
   }
@@ -226,8 +215,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  if (!(classified_out || unclassified_out || save_distances || init_index ||
-        update_index || save_matches)) {
+  if (!(classified_out || unclassified_out || save_distances || init_index || update_index || save_matches)) {
     cout << "Nothing to do! Use at least one of the following flags:" << endl;
     cout << "'--classified-out' to report classified reads," << endl;
     cout << "'--unclassified-out' to report unclassified reads," << endl;
@@ -471,15 +459,13 @@ int main(int argc, char *argv[]) {
       index_arr_0 = new uint16_t[encli_0];
       cout << "Done memory allocation for the index array-1." << endl;
     } catch (bad_alloc &ba) {
-      cerr << "Failed to allocate memory for index array-1." << ba.what()
-           << endl;
+      cerr << "Failed to allocate memory for index array-1." << ba.what() << endl;
     }
     try {
       index_arr_1 = new uint16_t[encli_1];
       cout << "Done memory allocation for the index array-1." << endl;
     } catch (bad_alloc &ba) {
-      cerr << "Failed to allocate memory for index array-1." << ba.what()
-           << endl;
+      cerr << "Failed to allocate memory for index array-1." << ba.what() << endl;
     }
   }
 
@@ -490,15 +476,13 @@ int main(int argc, char *argv[]) {
       count_arr_0 = new uint16_t[encli_0];
       cout << "Done memory allocation for the count array-1." << endl;
     } catch (bad_alloc &ba) {
-      cerr << "Failed to allocate memory for count array-1." << ba.what()
-           << endl;
+      cerr << "Failed to allocate memory for count array-1." << ba.what() << endl;
     }
     try {
       count_arr_1 = new uint16_t[encli_1];
       cout << "Done memory allocation for the count array-1." << endl;
     } catch (bad_alloc &ba) {
-      cerr << "Failed to allocate memory for count array-1." << ba.what()
-           << endl;
+      cerr << "Failed to allocate memory for count array-1." << ba.what() << endl;
     }
   }
 
@@ -595,14 +579,12 @@ int main(int argc, char *argv[]) {
       FILE *f;
       f = fopen(str_map_sig[m].c_str(), "rb");
       if (!f) {
-        cout << "Cannot open file for signatures in the library directory!"
-             << endl;
+        cout << "Cannot open file for signatures in the library directory!" << endl;
         exit(1);
       }
 
       // Read signs.
-      temp_count = fread(sigs_arr + sig_chunk_cumcounts[m], sizeof(uint32_t),
-                         sig_chunk_counts[m], f);
+      temp_count = fread(sigs_arr + sig_chunk_cumcounts[m], sizeof(uint32_t), sig_chunk_counts[m], f);
 #pragma omp atomic
       total_sigs_read += temp_count;
 
@@ -623,8 +605,7 @@ int main(int argc, char *argv[]) {
       }
 
       // Read tags.
-      temp_count = fread(tag_arr + tag_chunk_cumcounts[m], sizeof(int8_t),
-                         tag_chunk_counts[m], ftag);
+      temp_count = fread(tag_arr + tag_chunk_cumcounts[m], sizeof(int8_t), tag_chunk_counts[m], ftag);
 #pragma omp atomic
       total_tags_read += temp_count;
 
@@ -640,14 +621,12 @@ int main(int argc, char *argv[]) {
       FILE *fenc;
       fenc = fopen(str_map_enc[m].c_str(), "rb");
       if (!fenc) {
-        cout << "Cannot open file for encodings in the library directory!"
-             << endl;
+        cout << "Cannot open file for encodings in the library directory!" << endl;
         exit(1);
       }
 
       // Read encodings.
-      temp_count = fread(encode_arr_0 + enc_chunk_cumcounts_0[m],
-                         sizeof(uint64_t), enc_chunk_counts_0[m], fenc);
+      temp_count = fread(encode_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint64_t), enc_chunk_counts_0[m], fenc);
 #pragma omp atomic
       num_pairs_0 += temp_count;
 
@@ -667,8 +646,7 @@ int main(int argc, char *argv[]) {
       }
 
       // Read encodings.
-      temp_count = fread(encode_arr_1 + enc_chunk_cumcounts_1[m],
-                         sizeof(uint64_t), enc_chunk_counts_1[m], fence);
+      temp_count = fread(encode_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint64_t), enc_chunk_counts_1[m], fence);
 #pragma omp atomic
       num_pairs_1 += temp_count;
 
@@ -685,14 +663,12 @@ int main(int argc, char *argv[]) {
         FILE *fidx;
         fidx = fopen(str_map_idx[m].c_str(), "rb");
         if (!fidx) {
-          cout << "Cannot open file for indices in the library directory!"
-               << endl;
+          cout << "Cannot open file for indices in the library directory!" << endl;
           exit(1);
         }
 
         // Read k-mer phylogeny indices.
-        fread(index_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t),
-              enc_chunk_counts_0[m], fidx);
+        fread(index_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], fidx);
         fclose(fidx);
       }
     }
@@ -704,14 +680,12 @@ int main(int argc, char *argv[]) {
         FILE *fidx;
         fidx = fopen(str_map_idxe[m].c_str(), "rb");
         if (!fidx) {
-          cout << "Cannot open file for indices in the library directory!"
-               << endl;
+          cout << "Cannot open file for indices in the library directory!" << endl;
           exit(1);
         }
 
         // Read k-mer phylogeny indices.
-        fread(index_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t),
-              enc_chunk_counts_1[m], fidx);
+        fread(index_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], fidx);
         fclose(fidx);
       }
     }
@@ -726,14 +700,12 @@ int main(int argc, char *argv[]) {
         FILE *fcount;
         fcount = fopen(str_map_count[m].c_str(), "rb");
         if (!fcount) {
-          cout << "Cannot open file for count in the library directory!"
-               << endl;
+          cout << "Cannot open file for count in the library directory!" << endl;
           exit(1);
         }
 
         // Read k-mer counts.
-        fread(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t),
-              enc_chunk_counts_0[m], fcount);
+        fread(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], fcount);
         fclose(fcount);
       }
     }
@@ -745,14 +717,12 @@ int main(int argc, char *argv[]) {
         FILE *fcounte;
         fcounte = fopen(str_map_counte[m].c_str(), "rb");
         if (!fcounte) {
-          cout << "Cannot open file for counts in the library directory!"
-               << endl;
+          cout << "Cannot open file for counts in the library directory!" << endl;
           exit(1);
         }
 
         // Read k-mer counts.
-        fread(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t),
-              enc_chunk_counts_1[m], fcounte);
+        fread(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], fcounte);
         fclose(fcounte);
       }
     }
@@ -782,8 +752,7 @@ int main(int argc, char *argv[]) {
   }
 
 // Read enc_id array.
-#pragma omp parallel num_threads(thread_count)                                 \
-    shared(enc_arr_id, total_enc_id_read)
+#pragma omp parallel num_threads(thread_count) shared(enc_arr_id, total_enc_id_read)
   {
 #pragma omp for
     for (int m = 0; m < sigf_chunks; m++) {
@@ -795,8 +764,7 @@ int main(int argc, char *argv[]) {
       }
 
       // Read sigs.
-      temp_count = fread(enc_arr_id + enc_id_chunk_cumcounts[m],
-                         sizeof(uint8_t), enc_id_chunk_counts[m], fenc_id);
+      temp_count = fread(enc_arr_id + enc_id_chunk_cumcounts[m], sizeof(uint8_t), enc_id_chunk_counts[m], fenc_id);
 #pragma omp atomic
       total_enc_id_read += temp_count;
 
@@ -814,8 +782,7 @@ int main(int argc, char *argv[]) {
   cout << "-------------------" << endl << endl;
 
   auto end = chrono::steady_clock::now();
-  cout << "Done reading. Now matching. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count()
+  cout << "Done reading. Now matching. Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count()
        << " seconds." << endl;
 
   int counter_files = 0;
@@ -832,18 +799,12 @@ int main(int argc, char *argv[]) {
       seen_1.resize(encli_1, false);
     }
 
-    string query_fastq_truct =
-        query_file_path.substr(query_file_path.find_last_of("/") + 1);
-    query_fastq_truct =
-        query_fastq_truct.substr(0, query_fastq_truct.find_last_of("."));
-    string output_unclassified_path =
-        output_result_dir + "/" + "unclassified-seq_" + query_fastq_truct;
-    string output_classified_path =
-        output_result_dir + "/" + "classified-seq_" + query_fastq_truct;
-    string output_distances_path =
-        output_result_dir + "/" + "kmer-distances_" + query_fastq_truct;
-    string output_matches_path =
-        output_result_dir + "/" + "match-info_" + query_fastq_truct;
+    string query_fastq_truct = query_file_path.substr(query_file_path.find_last_of("/") + 1);
+    query_fastq_truct = query_fastq_truct.substr(0, query_fastq_truct.find_last_of("."));
+    string output_unclassified_path = output_result_dir + "/" + "unclassified-seq_" + query_fastq_truct;
+    string output_classified_path = output_result_dir + "/" + "classified-seq_" + query_fastq_truct;
+    string output_distances_path = output_result_dir + "/" + "kmer-distances_" + query_fastq_truct;
+    string output_matches_path = output_result_dir + "/" + "match-info_" + query_fastq_truct;
 
     uint16_t filename_index = filename_map[query_fastq_truct];
 
@@ -917,10 +878,8 @@ int main(int argc, char *argv[]) {
         uint8_t num_matched = 0;
         uint8_t num_matched_reverse = 0;
 
-        map<uint64_t, uint64_t> min_distances =
-            init_distance_map(maximum_distance);
-        map<uint64_t, uint64_t> reverse_min_distances =
-            init_distance_map(maximum_distance);
+        map<uint64_t, uint64_t> min_distances = init_distance_map(maximum_distance);
+        map<uint64_t, uint64_t> reverse_min_distances = init_distance_map(maximum_distance);
 
         vector<uint16_t> match_distances;
         vector<uint16_t> match_indices;
@@ -955,8 +914,7 @@ int main(int argc, char *argv[]) {
               uint16_t kmer_index;
 
               for (int64_t funci = 0; funci < l; funci++) {
-                kmer_sig =
-                    encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
+                kmer_sig = encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 
                 // Get first 2 bits of signature (effectively bits 28 - 27) of
                 // 32 bit encoding as partition numbers.
@@ -979,11 +937,9 @@ int main(int argc, char *argv[]) {
 
                   for (uint64_t enc = enc_start; enc < enc_end; enc++) {
                     // Set encoding array id.
-                    enc_arr_ind =
-                        get_enc_id(b * f_tmp + b * s_tmp + enc, enc_arr_id);
+                    enc_arr_ind = get_enc_id(b * f_tmp + b * s_tmp + enc, enc_arr_id);
 
-                    uint32_t encoding_idx =
-                        sigs_arr[b * f_tmp + b * s_tmp + enc];
+                    uint32_t encoding_idx = sigs_arr[b * f_tmp + b * s_tmp + enc];
                     if (enc_arr_ind == 0) {
                       test_enc = encode_arr_0[encoding_idx];
                     } else {
@@ -991,23 +947,17 @@ int main(int argc, char *argv[]) {
                     }
 
                     uint8_t dist = hd(b_enc, test_enc);
-                    check_distance(dist, p, min_dist, kmer_found, exact_match,
-                                   num_matched);
+                    check_distance(dist, p, min_dist, kmer_found, exact_match, num_matched);
                     if (update_index && exact_match) {
 #pragma omp critical
                       {
-                        update_class_index(index_arr_0, index_arr_1,
-                                           count_arr_0, count_arr_1, seen_0,
-                                           seen_1, enc_arr_ind, encoding_idx,
-                                           filename_index, lookup_table);
+                        update_class_index(index_arr_0, index_arr_1, count_arr_0, count_arr_1, seen_0, seen_1,
+                                           enc_arr_ind, encoding_idx, filename_index, lookup_table);
                       }
                     }
                     if (init_index && exact_match) {
 #pragma omp critical
-                      {
-                        update_kmer_count(count_arr_0, count_arr_1, seen_0,
-                                          seen_1, enc_arr_ind, encoding_idx);
-                      }
+                      { update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, enc_arr_ind, encoding_idx); }
                     }
                     if ((dist == min_dist) && save_matches) {
                       if (enc_arr_ind == 0) {
@@ -1018,25 +968,20 @@ int main(int argc, char *argv[]) {
                     }
 
                     // For each signature pointed row.
-                    if (kmer_found && (!save_distances || exact_match) &&
-                        (!init_index || exact_match) &&
-                        (!update_index || exact_match) &&
-                        (!save_matches || exact_match)) {
+                    if (kmer_found && (!save_distances || exact_match) && (!init_index || exact_match) &&
+                        (!update_index || exact_match) && (!save_matches || exact_match)) {
                       break;
                     }
                   }
                 }
                 // For each OR gate.
-                if (kmer_found && (!save_distances || exact_match) &&
-                    (!init_index || exact_match) &&
-                    (!update_index || exact_match) &&
-                    (!save_matches || exact_match)) {
+                if (kmer_found && (!save_distances || exact_match) && (!init_index || exact_match) &&
+                    (!update_index || exact_match) && (!save_matches || exact_match)) {
                   break;
                 }
               }
               // For each k-mer.
-              if ((num_matched >= c) && (!save_distances) && (!init_index) &&
-                  (!update_index) && (!save_matches)) {
+              if ((num_matched >= c) && (!save_distances) && (!init_index) && (!update_index) && (!save_matches)) {
                 break;
               }
               if (min_dist <= maximum_distance) {
@@ -1050,15 +995,13 @@ int main(int argc, char *argv[]) {
             }
           }
           // For each line.
-          if ((num_matched >= c) && (!save_distances) && (!init_index) &&
-              (!update_index) && (!save_matches)) {
+          if ((num_matched >= c) && (!save_distances) && (!init_index) && (!update_index) && (!save_matches)) {
             break;
           }
         }
 
         // Try reverse complement.
-        if ((num_matched < c) || save_distances || save_matches || init_index ||
-            update_index) {
+        if ((num_matched < c) || save_distances || save_matches || init_index || update_index) {
           int len = strlen(curr_read.c_str());
           char swap;
 
@@ -1093,8 +1036,7 @@ int main(int argc, char *argv[]) {
                 uint16_t kmer_index;
 
                 for (uint64_t funci = 0; funci < l; funci++) {
-                  kmer_sig =
-                      encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
+                  kmer_sig = encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 
                   // Get first 2 bits of signature (effectively bits 28 -
                   // 27) of 32 bit encoding as partition numbers.
@@ -1116,11 +1058,9 @@ int main(int argc, char *argv[]) {
                     enc_end = tag_arr[f_tmp + s_tmp + tag];
 
                     for (uint64_t enc = enc_start; enc < enc_end; enc++) {
-                      enc_arr_ind =
-                          get_enc_id(b * f_tmp + b * s_tmp + enc, enc_arr_id);
+                      enc_arr_ind = get_enc_id(b * f_tmp + b * s_tmp + enc, enc_arr_id);
 
-                      uint32_t encoding_idx =
-                          sigs_arr[f_tmp * b + s_tmp * b + enc];
+                      uint32_t encoding_idx = sigs_arr[f_tmp * b + s_tmp * b + enc];
                       if (enc_arr_ind == 0) {
                         test_enc = encode_arr_0[encoding_idx];
                       } else {
@@ -1128,23 +1068,17 @@ int main(int argc, char *argv[]) {
                       }
 
                       uint8_t dist = hd(b_enc, test_enc);
-                      check_distance(dist, p, min_dist, kmer_found, exact_match,
-                                     num_matched_reverse);
+                      check_distance(dist, p, min_dist, kmer_found, exact_match, num_matched_reverse);
                       if (update_index && exact_match) {
 #pragma omp critical
                         {
-                          update_class_index(index_arr_0, index_arr_1,
-                                             count_arr_0, count_arr_1, seen_0,
-                                             seen_1, enc_arr_ind, encoding_idx,
-                                             filename_index, lookup_table);
+                          update_class_index(index_arr_0, index_arr_1, count_arr_0, count_arr_1, seen_0, seen_1,
+                                             enc_arr_ind, encoding_idx, filename_index, lookup_table);
                         }
                       }
                       if (init_index && exact_match) {
 #pragma omp critical
-                        {
-                          update_kmer_count(count_arr_0, count_arr_1, seen_0,
-                                            seen_1, enc_arr_ind, encoding_idx);
-                        }
+                        { update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, enc_arr_ind, encoding_idx); }
                       }
                       if ((dist == min_dist) && save_matches) {
                         if (enc_arr_ind == 0) {
@@ -1155,25 +1089,21 @@ int main(int argc, char *argv[]) {
                       }
 
                       // For each signature pointed row.
-                      if (kmer_found && (!save_distances || exact_match) &&
-                          (!init_index || exact_match) &&
-                          (!update_index || exact_match) &&
-                          (!save_matches || exact_match)) {
+                      if (kmer_found && (!save_distances || exact_match) && (!init_index || exact_match) &&
+                          (!update_index || exact_match) && (!save_matches || exact_match)) {
                         break;
                       }
                     }
                   }
                   // For each OR gate.
-                  if (kmer_found && (!save_distances || exact_match) &&
-                      (!init_index || exact_match) &&
-                      (!update_index || exact_match) &&
-                      (!save_matches || exact_match)) {
+                  if (kmer_found && (!save_distances || exact_match) && (!init_index || exact_match) &&
+                      (!update_index || exact_match) && (!save_matches || exact_match)) {
                     break;
                   }
                 }
                 // For each k-mer.
-                if ((num_matched_reverse >= c) && (!save_distances) &&
-                    (!init_index) && (!update_index) && (!save_matches)) {
+                if ((num_matched_reverse >= c) && (!save_distances) && (!init_index) && (!update_index) &&
+                    (!save_matches)) {
                   break;
                 }
                 if (min_dist <= maximum_distance) {
@@ -1187,8 +1117,8 @@ int main(int argc, char *argv[]) {
               }
             }
             // For each line.
-            if ((num_matched_reverse >= c) && (!save_distances) &&
-                (!init_index) && (!update_index) && (!save_matches)) {
+            if ((num_matched_reverse >= c) && (!save_distances) && (!init_index) && (!update_index) &&
+                (!save_matches)) {
               break;
             }
           }
@@ -1196,17 +1126,13 @@ int main(int argc, char *argv[]) {
 
         if (save_distances) {
 #pragma omp critical
-          {
-            output_distances(ofs_kmer_distances, name, min_distances,
-                             reverse_min_distances);
-          }
+          { output_distances(ofs_kmer_distances, name, min_distances, reverse_min_distances); }
         }
 
         if (save_matches) {
 #pragma omp critical
           {
-            output_matches(ofs_match_information, name, match_indices,
-                           match_distances, reverse_match_indices,
+            output_matches(ofs_match_information, name, match_indices, match_distances, reverse_match_indices,
                            reverse_match_distances);
           }
         }
@@ -1214,27 +1140,20 @@ int main(int argc, char *argv[]) {
         if ((num_matched < c) && (num_matched_reverse < c)) {
           if (unclassified_out) {
 #pragma omp critical
-            {
-              output_reads(ofs_reads_unclassified, name, orig_read, line_third,
-                           line_fourth);
-            }
+            { output_reads(ofs_reads_unclassified, name, orig_read, line_third, line_fourth); }
           }
         } else if ((num_matched >= c) || (num_matched_reverse >= c)) {
 #pragma omp atomic
           reads_matched += 1;
           if (classified_out) {
 #pragma omp critical
-            {
-              output_reads(ofs_reads_classified, name, orig_read, line_third,
-                           line_fourth);
-            }
+            { output_reads(ofs_reads_classified, name, orig_read, line_third, line_fourth); }
           }
         }
       }
     }
 
-    cout << query_file_path << " " << num_lines_read << " " << reads_matched
-         << endl;
+    cout << query_file_path << " " << num_lines_read << " " << reads_matched << endl;
 
     ifs_reads_query.close();
 
@@ -1253,26 +1172,22 @@ int main(int argc, char *argv[]) {
       FILE *wfidx;
       wfidx = fopen(str_map_idx[m].c_str(), "wb");
       if (!wfidx) {
-        cout << "Cannot open file for indices-0 in the library directory!"
-             << endl;
+        cout << "Cannot open file for indices-0 in the library directory!" << endl;
         exit(1);
       }
       // Write index array-0.
-      fwrite(index_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t),
-             enc_chunk_counts_0[m], wfidx);
+      fwrite(index_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], wfidx);
       fclose(wfidx);
     }
     for (int m = 0; m < encf_chunks; m++) {
       FILE *wfidx;
       wfidx = fopen(str_map_idxe[m].c_str(), "wb");
       if (!wfidx) {
-        cout << "Cannot open file for indices-1 in the library directory!"
-             << endl;
+        cout << "Cannot open file for indices-1 in the library directory!" << endl;
         exit(1);
       }
       // Write index array-1.
-      fwrite(index_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t),
-             enc_chunk_counts_1[m], wfidx);
+      fwrite(index_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], wfidx);
       fclose(wfidx);
     }
   }
@@ -1281,26 +1196,22 @@ int main(int argc, char *argv[]) {
       FILE *wfcount;
       wfcount = fopen(str_map_count[m].c_str(), "wb");
       if (!wfcount) {
-        cout << "Cannot open file for count-0 in the library directory!"
-             << endl;
+        cout << "Cannot open file for count-0 in the library directory!" << endl;
         exit(1);
       }
       // Write count array-0.
-      fwrite(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t),
-             enc_chunk_counts_0[m], wfcount);
+      fwrite(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], wfcount);
       fclose(wfcount);
     }
     for (int m = 0; m < encf_chunks; m++) {
       FILE *wfcount;
       wfcount = fopen(str_map_counte[m].c_str(), "wb");
       if (!wfcount) {
-        cout << "Cannot open file for count-1 in the library directory!"
-             << endl;
+        cout << "Cannot open file for count-1 in the library directory!" << endl;
         exit(1);
       }
       // Write count array-1.
-      fwrite(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t),
-             enc_chunk_counts_1[m], wfcount);
+      fwrite(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], wfcount);
       fclose(wfcount);
     }
   }
@@ -1314,8 +1225,7 @@ int main(int argc, char *argv[]) {
   delete[] enc_arr_id;
 
   end = chrono::steady_clock::now();
-  cout << "Done matching for all. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count()
+  cout << "Done matching for all. Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count()
        << " seconds." << endl;
 
   return 0;
@@ -1424,8 +1334,7 @@ vector<string> list_dir(const char *path) {
   DIR *dir = opendir(path);
 
   while ((entry = readdir(dir)) != NULL) {
-    if ((strcmp(entry->d_name, "..") != 0) &&
-        (strcmp(entry->d_name, ".") != 0)) {
+    if ((strcmp(entry->d_name, "..") != 0) && (strcmp(entry->d_name, ".") != 0)) {
       userString.push_back(string(path) + "/" + entry->d_name);
     }
   }
@@ -1434,17 +1343,13 @@ vector<string> list_dir(const char *path) {
   return (userString);
 }
 
-uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
-                          vector<int8_t> bits_to_grab) {
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts, vector<int8_t> bits_to_grab) {
   uint64_t res = 0;
   int i = 0;
 
   while (shifts[i] != -1) {
     val = val << shifts[i];
-    asm("shld %b3, %2, %0"
-        : "=rm"(res)
-        : "0"(res), "r"(val), "ic"(bits_to_grab[i])
-        : "cc");
+    asm("shld %b3, %2, %0" : "=rm"(res) : "0"(res), "r"(val), "ic"(bits_to_grab[i]) : "cc");
 
     i++;
   }
@@ -1478,8 +1383,8 @@ uint8_t get_enc_id(uint64_t sind, uint8_t enc_arr_id[]) {
   return (enc_arr_ind);
 }
 
-void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
-                    bool &kmer_found, bool &exact_match, uint8_t &num_matched) {
+void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist, bool &kmer_found, bool &exact_match,
+                    uint8_t &num_matched) {
   if ((!kmer_found) && (dist <= p)) {
     kmer_found = true;
     num_matched += 1;
@@ -1490,8 +1395,7 @@ void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
   exact_match = dist == 0;
 }
 
-void output_reads(ofstream &ofs_reads, string name, string orig_read,
-                  string line_third, string line_fourth) {
+void output_reads(ofstream &ofs_reads, string name, string orig_read, string line_third, string line_fourth) {
   ofs_reads << name << endl;
   ofs_reads << orig_read << endl;
   // Output separator and quality.
@@ -1499,8 +1403,7 @@ void output_reads(ofstream &ofs_reads, string name, string orig_read,
   ofs_reads << line_fourth << endl;
 }
 
-void output_distances(ofstream &ofs_kmer_distances, string name,
-                      map<uint64_t, uint64_t> min_distances,
+void output_distances(ofstream &ofs_kmer_distances, string name, map<uint64_t, uint64_t> min_distances,
                       map<uint64_t, uint64_t> reverse_min_distances) {
   ofs_kmer_distances << name << "\t"
                      << "--";
@@ -1517,24 +1420,20 @@ void output_distances(ofstream &ofs_kmer_distances, string name,
   ofs_kmer_distances << endl;
 }
 
-void output_matches(ofstream &ofs_match_information, string name,
-                    vector<uint16_t> match_indices,
-                    vector<uint16_t> match_distances,
-                    vector<uint16_t> reverse_match_indices,
+void output_matches(ofstream &ofs_match_information, string name, vector<uint16_t> match_indices,
+                    vector<uint16_t> match_distances, vector<uint16_t> reverse_match_indices,
                     vector<uint16_t> reverse_match_distances) {
   ofs_match_information << name << endl;
 
   ofs_match_information << "--";
   for (int i = 0; i < match_indices.size(); ++i) {
-    ofs_match_information << " " << match_indices[i] << ":"
-                          << match_distances[i];
+    ofs_match_information << " " << match_indices[i] << ":" << match_distances[i];
   }
   ofs_match_information << endl;
 
   ofs_match_information << "rc";
   for (int i = 0; i < reverse_match_indices.size(); ++i) {
-    ofs_match_information << " " << reverse_match_indices[i] << ":"
-                          << reverse_match_distances[i];
+    ofs_match_information << " " << reverse_match_indices[i] << ":" << reverse_match_distances[i];
   }
   ofs_match_information << endl;
 }
@@ -1562,8 +1461,7 @@ void read_filename_map(string filename, map<string, uint16_t> &filename_map) {
   fmap.close();
 }
 
-void read_lookup_table(string filename,
-                       vector<vector<uint16_t>> &lookup_table) {
+void read_lookup_table(string filename, vector<vector<uint16_t>> &lookup_table) {
   ifstream ftable;
   ftable.open(filename);
 
@@ -1580,12 +1478,9 @@ void read_lookup_table(string filename,
   }
 }
 
-void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
-                        uint16_t count_arr_0[], uint16_t count_arr_1[],
-                        vector<bool> &seen_0, vector<bool> &seen_1,
-                        uint8_t enc_arr_ind, uint32_t encoding_idx,
-                        uint16_t filename_index,
-                        vector<vector<uint16_t>> &lookup_table) {
+void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[], uint16_t count_arr_0[], uint16_t count_arr_1[],
+                        vector<bool> &seen_0, vector<bool> &seen_1, uint8_t enc_arr_ind, uint32_t encoding_idx,
+                        uint16_t filename_index, vector<vector<uint16_t>> &lookup_table) {
   float p_update;
   float w = 5.0;
   float s = 4.0;
@@ -1594,9 +1489,7 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
   if (enc_arr_ind == 0) {
     if (!seen_0[encoding_idx]) {
       seen_0[encoding_idx] = true;
-      p_update =
-          min(1.0, pow(1.0 / w, 2) +
-                       (s / max(s, s + (float)count_arr_0[encoding_idx] - w)));
+      p_update = min(1.0, pow(1.0 / w, 2) + (s / max(s, s + (float)count_arr_0[encoding_idx] - w)));
       bernoulli_distribution btrial(p_update);
       bool update = btrial(gen);
       if (update) {
@@ -1604,17 +1497,14 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
           index_arr_0[encoding_idx] = filename_index;
         } else if (index_arr_0[encoding_idx] == 1) {
         } else {
-          index_arr_0[encoding_idx] =
-              lookup_table[index_arr_0[encoding_idx]][filename_index];
+          index_arr_0[encoding_idx] = lookup_table[index_arr_0[encoding_idx]][filename_index];
         }
       }
     }
   } else {
     if (!seen_1[encoding_idx]) {
       seen_1[encoding_idx] = true;
-      p_update =
-          min(1.0, pow(1.0 / w, 2) +
-                       (s / max(s, s + (float)count_arr_1[encoding_idx] - w)));
+      p_update = min(1.0, pow(1.0 / w, 2) + (s / max(s, s + (float)count_arr_1[encoding_idx] - w)));
       bernoulli_distribution btrial(p_update);
       bool update = btrial(gen);
       if (update) {
@@ -1622,16 +1512,14 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[],
           index_arr_1[encoding_idx] = filename_index;
         } else if (index_arr_1[encoding_idx] == 1) {
         } else {
-          index_arr_1[encoding_idx] =
-              lookup_table[index_arr_1[encoding_idx]][filename_index];
+          index_arr_1[encoding_idx] = lookup_table[index_arr_1[encoding_idx]][filename_index];
         }
       }
     }
   }
 }
 
-void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[],
-                       vector<bool> &seen_0, vector<bool> &seen_1,
+void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1,
                        uint8_t enc_arr_ind, uint32_t encoding_idx) {
   if (enc_arr_ind == 0) {
     if (!seen_0[encoding_idx]) {

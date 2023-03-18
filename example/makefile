@@ -31,7 +31,7 @@ search:
 		-o "." \
 		-c 1 \
 		--thread-count 16 \
-		--unclassified-out --classified-out --save-distances \
+		--unclassified-out --classified-out --save-distances
 		# --init-index
 		# --update-index
 		# --save-matches
