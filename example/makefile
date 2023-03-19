@@ -1,4 +1,4 @@
-all: clean minimize map search
+all: clean minimize map search classify
 
 clean:
 	@make clean -C ..
@@ -7,7 +7,8 @@ clean:
 	[ ! -e classified-seq_G000307305   ] || rm classified-seq_G000307305
 	[ ! -e unclassified-seq_G000307305 ] || rm unclassified-seq_G000307305
 	[ ! -e kmer-distances_G000307305   ] || rm kmer-distances_G000307305
-	[ ! -e match-info_G000307305			 ] || rm match-info_G000307305
+	[ ! -e match-info_G000307305       ] || rm match-info_G000307305
+	[ ! -e predictions_G000307305      ] || rm predictions_G000307305
 
 minimize:
 	@echo -e "\n===COMPILING===\n"
@@ -30,11 +31,23 @@ search:
 		-i "G000307305_nbr_mapping" \
 		-o "." \
 		-c 1 \
-		--thread-count 16 \
+		--thread-count 12 \
 		--unclassified-out --classified-out --save-distances
 		# --init-index
 		# --update-index
 		# --save-matches
+
+classify:
+	@echo -e "\n===COMPILING===\n"
+	@make classify -C ..
+	@echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+	@echo "===CLASSIFICATION==="
+	@echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+	@../consult_classify \
+		-i "match-info_G000307305" \
+		-o "." \
+		--taxonomy-path "taxonomy-lookup" \
+		--thread-count 12
 
 map:
 	@echo -e "\n===COMPILING===\n"

@@ -43,8 +43,7 @@
 using namespace std;
 
 // Prototypes.
-uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
-                          vector<int8_t> bits_to_grab);
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts, vector<int8_t> bits_to_grab);
 
 void encode_kmer(const char s[], uint64_t &b_enc, uint64_t &b_sig);
 
@@ -87,8 +86,7 @@ int main(int argc, char *argv[]) {
     };
 
     int option_index = 0;
-    cf_tmp =
-        getopt_long(argc, argv, "i:o:p:l:h:t:b:", long_options, &option_index);
+    cf_tmp = getopt_long(argc, argv, "i:o:p:l:h:t:b:", long_options, &option_index);
 
     if ((optarg != NULL) && (*optarg == '-')) {
       cf_tmp = ':';
@@ -123,8 +121,7 @@ int main(int argc, char *argv[]) {
         break;
       case 'l':
         if (atoi(optarg) < 1) {
-          cout << "Value of -l (--number-of-tables) cannot be smaller than 1."
-               << endl;
+          cout << "Value of -l (--number-of-tables) cannot be smaller than 1." << endl;
           exit(1);
         }
         l = atoi(optarg); // Default is set by heuristic.
@@ -132,9 +129,7 @@ int main(int argc, char *argv[]) {
         break;
       case 'h':
         if (atoi(optarg) < 1) {
-          cout
-              << "Value of -h (--number-of-positions) cannot be smaller than 1."
-              << endl;
+          cout << "Value of -h (--number-of-positions) cannot be smaller than 1." << endl;
           exit(1);
         }
         h = atoi(optarg); // Default is set by heuristic.
@@ -142,8 +137,7 @@ int main(int argc, char *argv[]) {
         break;
       case 'b':
         if (atoi(optarg) < 1) {
-          cout << "Value of -b (--column-per-tag) cannot be smaller than 1."
-               << endl;
+          cout << "Value of -b (--column-per-tag) cannot be smaller than 1." << endl;
           exit(1);
         }
         // Total number of columns is partitions * b.
@@ -220,11 +214,8 @@ int main(int argc, char *argv[]) {
     if (!given_h)
       h_tmp = max(4.0, ceil(0.5 * log2((f_kmer_count) / b_tmp)));
     if (!given_l)
-      l_tmp =
-          max(2.0, round(log(1.0 - alpha) / log(1.0 - pow(1.0 - d, h_tmp))));
-    memory_usage_tmp =
-        (4.0 * b_tmp * pow(2, 2 * h_tmp) * l + 8.0 * f_kmer_count) /
-        pow(10.0, 9);
+      l_tmp = max(2.0, round(log(1.0 - alpha) / log(1.0 - pow(1.0 - d, h_tmp))));
+    memory_usage_tmp = (4.0 * b_tmp * pow(2, 2 * h_tmp) * l + 8.0 * f_kmer_count) / pow(10.0, 9);
     if (memory_usage_tmp < memory_usage_min) {
       h = h_tmp;
       l = l_tmp;
@@ -233,8 +224,7 @@ int main(int argc, char *argv[]) {
     }
   }
   uint64_t sigs_row_count = pow(2, 2 * h - t); // # of rows; 2^(2h-t)
-  memory_usage_min =
-      (float)(4 * b * pow(2, 2 * h) * l + 8 * kmer_count) / pow(10.0, 9);
+  memory_usage_min = (float)(4 * b * pow(2, 2 * h) * l + 8 * kmer_count) / pow(10.0, 9);
 
   assert(t > 0);
   assert(p >= 0);
@@ -309,15 +299,13 @@ int main(int argc, char *argv[]) {
     encode_arr_0 = new uint64_t[encode_arr_size];
     cout << "Done memory allocation for the encoding array-0." << endl;
   } catch (bad_alloc &ba) {
-    cerr << "Failed to allocate memory for the encoding array-0." << ba.what()
-         << endl;
+    cerr << "Failed to allocate memory for the encoding array-0." << ba.what() << endl;
   }
   try {
     encode_arr_1 = new uint64_t[encode_arr_size];
     cout << "Done memory allocation for the encoding array-1." << endl;
   } catch (bad_alloc &ba) {
-    cerr << "Failed to allocate memory for the encoding array-1." << ba.what()
-         << endl;
+    cerr << "Failed to allocate memory for the encoding array-1." << ba.what() << endl;
   }
 
   // Allocate enc array id array.
@@ -338,8 +326,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Create a directory (Linux dependent functionality).
-  const int dir_err =
-      mkdir(output_library_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  const int dir_err = mkdir(output_library_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
   if (-1 == dir_err) {
     cerr << "Cannot create directory! Error: " << strerror(errno) << endl;
     exit(1);
@@ -471,14 +458,11 @@ int main(int argc, char *argv[]) {
         // encoding as sigs row number.
         big_sig_hash = sig_hash & big_sig_mask;
 
-        uint64_t tmp_idx =
-            (sigs_row_count * b * partitions * i) +
-            (big_sig_hash * b * partitions) +
-            sigs_indicator_arr[sigs_row_count * i + big_sig_hash];
+        uint64_t tmp_idx = (sigs_row_count * b * partitions * i) + (big_sig_hash * b * partitions) +
+                           sigs_indicator_arr[sigs_row_count * i + big_sig_hash];
 
         // Check is row space is available for forward k-mer.
-        if (sigs_indicator_arr[sigs_row_count * i + big_sig_hash] <
-            b * partitions) {
+        if (sigs_indicator_arr[sigs_row_count * i + big_sig_hash] < b * partitions) {
           // Populate tag array.
           tag_arr[tmp_idx] = tag;
 
@@ -522,8 +506,7 @@ int main(int argc, char *argv[]) {
   // Recording end time.
   auto end = chrono::steady_clock::now();
   cout << "Done hashing k-mers. Now writing the library." << endl;
-  cout << "Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count()
+  cout << "Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count()
        << " seconds." << endl
        << endl;
 
@@ -567,8 +550,7 @@ int main(int argc, char *argv[]) {
 
         // Storing the respective array elements in pairs.
         for (uint64_t k = 0; k < n; k++) {
-          uint64_t tmp_idx =
-              (sigs_row_count * b * partitions * i) + (j * b * partitions) + k;
+          uint64_t tmp_idx = (sigs_row_count * b * partitions * i) + (j * b * partitions) + k;
           int8_t tag_val = tag_arr[tmp_idx];
           uint32_t sig_val = sigs_arr[tmp_idx];
           uint8_t encoding_id = enc_arr_id[tmp_idx];
@@ -581,8 +563,7 @@ int main(int argc, char *argv[]) {
 
         // Update new_tag_array.
         for (uint64_t r = 0; r < partitions; r++) {
-          uint64_t tmp_idx =
-              (sigs_row_count * partitions * i) + (j * partitions) + r;
+          uint64_t tmp_idx = (sigs_row_count * partitions * i) + (j * partitions) + r;
           if (r == 0) {
             new_tag_arr[tmp_idx] = tag_col_count[r];
           } else {
@@ -592,8 +573,7 @@ int main(int argc, char *argv[]) {
 
         // Modifying original sig array.
         for (uint64_t k = 0; k < n; k++) {
-          uint64_t tmp_idx =
-              (sigs_row_count * b * partitions * i) + (j * b * partitions) + k;
+          uint64_t tmp_idx = (sigs_row_count * b * partitions * i) + (j * b * partitions) + k;
           sigs_arr[tmp_idx] = get<1>(pairt[k]);
           enc_arr_id[tmp_idx] = get<2>(pairt[k]);
         }
@@ -649,8 +629,7 @@ int main(int argc, char *argv[]) {
 
   // Write mask array and output real count k-mers included in DB.
   for (int i = 0; i < l; i++) {
-    cout << "k-mers included l = " << i << " >> " << included_kmers_counter[i]
-         << endl;
+    cout << "k-mers included l = " << i << " >> " << included_kmers_counter[i] << endl;
 
     int size = shifts[i].size();
     fwrite(&size, sizeof(int8_t), 1, wfmeta);
@@ -704,8 +683,7 @@ int main(int argc, char *argv[]) {
     total_enc_id_written += enc_id_chunk_counts[m];
   }
   sig_chunk_counts[SIGF_CHUNKS - 1] = sigs_arr_size - total_sigs_written;
-  enc_id_chunk_counts[SIGF_CHUNKS - 1] =
-      new_enc_id_arr_size - total_enc_id_written;
+  enc_id_chunk_counts[SIGF_CHUNKS - 1] = new_enc_id_arr_size - total_enc_id_written;
 
   for (int m = 0; m < TAGF_CHUNKS - 1; m++) {
     tag_chunk_counts[m] = round(new_tag_arr_size / TAGF_CHUNKS);
@@ -739,14 +717,13 @@ int main(int argc, char *argv[]) {
     FILE *wf;
     wf = fopen(path.c_str(), "wb");
     if (!wf) {
-      cout << "Cannot open file for some signatures in the library directory!"
-           << endl;
+      cout << "Cannot open file for some signatures in the library directory!" << endl;
       exit(1);
     }
 
     // Write sigs.
-    total_sigs_written += fwrite(sigs_arr + total_sigs_written,
-                                 sizeof(uint32_t), sig_chunk_counts[m], wf);
+    total_sigs_written +=
+        fwrite(sigs_arr + total_sigs_written, sizeof(uint32_t), sig_chunk_counts[m], wf);
     fclose(wf);
   }
 
@@ -761,14 +738,13 @@ int main(int argc, char *argv[]) {
     FILE *wftag;
     wftag = fopen(path.c_str(), "wb");
     if (!wftag) {
-      cout << "Cannot open file for some tags in the library directory!"
-           << endl;
+      cout << "Cannot open file for some tags in the library directory!" << endl;
       exit(1);
     }
 
     // Write tags.
-    total_tags_written += fwrite(new_tag_arr + total_tags_written,
-                                 sizeof(int8_t), tag_chunk_counts[m], wftag);
+    total_tags_written +=
+        fwrite(new_tag_arr + total_tags_written, sizeof(int8_t), tag_chunk_counts[m], wftag);
     fclose(wftag);
   }
 
@@ -782,14 +758,12 @@ int main(int argc, char *argv[]) {
     path = output_library_dir + "/" + map_enc;
     wfenc = fopen(path.c_str(), "wb");
     if (!wfenc) {
-      cout << "Cannot open file for some encodings in the library directory!"
-           << endl;
+      cout << "Cannot open file for some encodings in the library directory!" << endl;
       exit(1);
     }
     // Write encoding array.
-    total_members_written_0 +=
-        fwrite(encode_arr_0 + total_members_written_0, sizeof(uint64_t),
-               enc_chunk_counts_0[m], wfenc);
+    total_members_written_0 += fwrite(encode_arr_0 + total_members_written_0, sizeof(uint64_t),
+                                      enc_chunk_counts_0[m], wfenc);
     fclose(wfenc);
   }
 
@@ -803,14 +777,12 @@ int main(int argc, char *argv[]) {
     path = output_library_dir + "/" + map_ence;
     wfenc = fopen(path.c_str(), "wb");
     if (!wfenc) {
-      cout << "Cannot open file for some encodings-e in the library directory!"
-           << endl;
+      cout << "Cannot open file for some encodings-e in the library directory!" << endl;
       exit(1);
     }
     // Write encoding array.
-    total_members_written_1 +=
-        fwrite(encode_arr_1 + total_members_written_1, sizeof(uint64_t),
-               enc_chunk_counts_1[m], wfenc);
+    total_members_written_1 += fwrite(encode_arr_1 + total_members_written_1, sizeof(uint64_t),
+                                      enc_chunk_counts_1[m], wfenc);
     fclose(wfenc);
   }
 
@@ -832,8 +804,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Write sigs.
-    total_enc_id_written += fwrite(new_enc_id_arr + total_enc_id_written,
-                                   sizeof(uint8_t), enc_id_chunk_counts[m], wf);
+    total_enc_id_written +=
+        fwrite(new_enc_id_arr + total_enc_id_written, sizeof(uint8_t), enc_id_chunk_counts[m], wf);
 
     fclose(wf);
   }
@@ -847,14 +819,12 @@ int main(int argc, char *argv[]) {
   cout << "Encodings ID written : " << total_enc_id_written << endl;
   cout << "Encodings written to array-0 : " << total_members_written_0 << endl;
   cout << "Encodings written to array-1 : " << total_members_written_1 << endl;
-  cout << "Encodings written : "
-       << total_members_written_0 + total_members_written_1 << endl;
+  cout << "Encodings written : " << total_members_written_0 + total_members_written_1 << endl;
   cout << "-------------------" << endl << endl;
 
   end = chrono::steady_clock::now();
   cout << "Done constructing the library. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds." << endl
+       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl
        << endl;
 
   // Output map information.
@@ -866,8 +836,8 @@ int main(int argc, char *argv[]) {
   cout << "Tag size in bits = " << t << endl;
   cout << "Tag mask = " << tag_mask << endl;
   cout << "Big sig mask = " << big_sig_mask << endl;
-  cout << "Estimated size of the reference library (GB): " << std::fixed
-       << std::setprecision(4) << memory_usage_min << endl;
+  cout << "Estimated size of the reference library (GB): " << std::fixed << std::setprecision(4)
+       << memory_usage_min << endl;
   cout << "--------------------" << endl << endl;
 
   // Compute the usage of rows in signature matrix to determine how many
@@ -880,8 +850,8 @@ int main(int argc, char *argv[]) {
       sig_row_count_vec[sigs_indicator_arr[sigs_row_count * i + r]] += 1;
     }
     for (int s = 0; s < b * partitions + 1; s++) {
-      cout << "l = " << i << " -- Count of rows with positions filled " << s
-           << " : " << sig_row_count_vec[s];
+      cout << "l = " << i << " -- Count of rows with positions filled " << s << " : "
+           << sig_row_count_vec[s];
       cout << " (" << std::fixed << std::setprecision(6)
            << (double)sig_row_count_vec[s] / sigs_row_count << ")" << endl;
     }
@@ -904,8 +874,7 @@ int main(int argc, char *argv[]) {
   delete[] new_tag_arr;
 
   end = chrono::steady_clock::now();
-  cout << "Done writing. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count()
+  cout << "Done writing. Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count()
        << " seconds." << endl;
 
   return 0;
@@ -934,16 +903,12 @@ void encode_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig) {
   }
 }
 
-uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
-                          vector<int8_t> bits_to_grab) {
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts, vector<int8_t> bits_to_grab) {
   uint64_t res = 0;
   int i = 0;
   while (shifts[i] != -1) {
     val = val << shifts[i];
-    asm("shld %b3, %2, %0"
-        : "=rm"(res)
-        : "0"(res), "r"(val), "ic"(bits_to_grab[i])
-        : "cc");
+    asm("shld %b3, %2, %0" : "=rm"(res) : "0"(res), "r"(val), "ic"(bits_to_grab[i]) : "cc");
 
     i++;
   }

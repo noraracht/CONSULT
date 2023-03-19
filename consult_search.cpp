@@ -58,11 +58,13 @@ void encode_kmer_reverse(const char s[], uint64_t &b_enc, uint64_t &b_sig);
 void update_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig);
 void update_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig);
 
-void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist, bool &kmer_found, bool &exact_match,
-                    uint8_t &num_matched);
+void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist, bool &kmer_found,
+                    bool &exact_match, uint8_t &num_matched);
 
-void output_reads(ofstream &ofs_reads, string name, string orig_read, string line_third, string line_fourth);
-void output_distances(ofstream &ofs_kmer_distances, string name, map<uint64_t, uint64_t> min_distances,
+void output_reads(ofstream &ofs_reads, string name, string orig_read, string line_third,
+                  string line_fourth);
+void output_distances(ofstream &ofs_kmer_distances, string name,
+                      map<uint64_t, uint64_t> min_distances,
                       map<uint64_t, uint64_t> reverse_min_distances);
 void output_matches(ofstream &ofs_match_information, string name, vector<uint16_t> match_indices,
                     vector<uint16_t> match_distances, vector<uint16_t> reverse_match_indices,
@@ -71,11 +73,12 @@ void output_matches(ofstream &ofs_match_information, string name, vector<uint16_
 void read_filename_map(string filename, map<string, uint16_t> &filename_map);
 void read_lookup_table(string filename, vector<vector<uint16_t>> &lookup_table);
 
-void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[], uint16_t count_arr_0[], uint16_t count_arr_1[],
-                        vector<bool> &seen_0, vector<bool> &seen_1, uint8_t enc_arr_ind, uint32_t encoding_idx,
-                        uint16_t filename_index, vector<vector<uint16_t>> &lookup_table);
-void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1,
-                       uint8_t enc_arr_ind, uint32_t encoding_idx);
+void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[], uint16_t count_arr_0[],
+                        uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1,
+                        uint8_t enc_arr_ind, uint32_t encoding_idx, uint16_t filename_index,
+                        vector<vector<uint16_t>> &lookup_table);
+void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0,
+                       vector<bool> &seen_1, uint8_t enc_arr_ind, uint32_t encoding_idx);
 
 map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance);
 
@@ -196,7 +199,8 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  if ((init_index && update_index) || (init_index && save_matches) || (update_index && save_matches)) {
+  if ((init_index && update_index) || (init_index && save_matches) ||
+      (update_index && save_matches)) {
     cout << "Can only do one of initialize, update or save at a time." << endl;
     exit(1);
   }
@@ -215,7 +219,8 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  if (!(classified_out || unclassified_out || save_distances || init_index || update_index || save_matches)) {
+  if (!(classified_out || unclassified_out || save_distances || init_index || update_index ||
+        save_matches)) {
     cout << "Nothing to do! Use at least one of the following flags:" << endl;
     cout << "'--classified-out' to report classified reads," << endl;
     cout << "'--unclassified-out' to report unclassified reads," << endl;
@@ -584,7 +589,8 @@ int main(int argc, char *argv[]) {
       }
 
       // Read signs.
-      temp_count = fread(sigs_arr + sig_chunk_cumcounts[m], sizeof(uint32_t), sig_chunk_counts[m], f);
+      temp_count =
+          fread(sigs_arr + sig_chunk_cumcounts[m], sizeof(uint32_t), sig_chunk_counts[m], f);
 #pragma omp atomic
       total_sigs_read += temp_count;
 
@@ -605,7 +611,8 @@ int main(int argc, char *argv[]) {
       }
 
       // Read tags.
-      temp_count = fread(tag_arr + tag_chunk_cumcounts[m], sizeof(int8_t), tag_chunk_counts[m], ftag);
+      temp_count =
+          fread(tag_arr + tag_chunk_cumcounts[m], sizeof(int8_t), tag_chunk_counts[m], ftag);
 #pragma omp atomic
       total_tags_read += temp_count;
 
@@ -626,7 +633,8 @@ int main(int argc, char *argv[]) {
       }
 
       // Read encodings.
-      temp_count = fread(encode_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint64_t), enc_chunk_counts_0[m], fenc);
+      temp_count = fread(encode_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint64_t),
+                         enc_chunk_counts_0[m], fenc);
 #pragma omp atomic
       num_pairs_0 += temp_count;
 
@@ -646,7 +654,8 @@ int main(int argc, char *argv[]) {
       }
 
       // Read encodings.
-      temp_count = fread(encode_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint64_t), enc_chunk_counts_1[m], fence);
+      temp_count = fread(encode_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint64_t),
+                         enc_chunk_counts_1[m], fence);
 #pragma omp atomic
       num_pairs_1 += temp_count;
 
@@ -668,7 +677,8 @@ int main(int argc, char *argv[]) {
         }
 
         // Read k-mer phylogeny indices.
-        fread(index_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], fidx);
+        fread(index_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m],
+              fidx);
         fclose(fidx);
       }
     }
@@ -685,7 +695,8 @@ int main(int argc, char *argv[]) {
         }
 
         // Read k-mer phylogeny indices.
-        fread(index_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], fidx);
+        fread(index_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m],
+              fidx);
         fclose(fidx);
       }
     }
@@ -705,7 +716,8 @@ int main(int argc, char *argv[]) {
         }
 
         // Read k-mer counts.
-        fread(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], fcount);
+        fread(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m],
+              fcount);
         fclose(fcount);
       }
     }
@@ -722,7 +734,8 @@ int main(int argc, char *argv[]) {
         }
 
         // Read k-mer counts.
-        fread(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], fcounte);
+        fread(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m],
+              fcounte);
         fclose(fcounte);
       }
     }
@@ -764,7 +777,8 @@ int main(int argc, char *argv[]) {
       }
 
       // Read sigs.
-      temp_count = fread(enc_arr_id + enc_id_chunk_cumcounts[m], sizeof(uint8_t), enc_id_chunk_counts[m], fenc_id);
+      temp_count = fread(enc_arr_id + enc_id_chunk_cumcounts[m], sizeof(uint8_t),
+                         enc_id_chunk_counts[m], fenc_id);
 #pragma omp atomic
       total_enc_id_read += temp_count;
 
@@ -782,8 +796,8 @@ int main(int argc, char *argv[]) {
   cout << "-------------------" << endl << endl;
 
   auto end = chrono::steady_clock::now();
-  cout << "Done reading. Now matching. Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds." << endl;
+  cout << "Done reading. Now matching. Time so far: "
+       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl;
 
   int counter_files = 0;
   for (int fidx = 0; fidx < query_file_list.size(); ++fidx) {
@@ -801,8 +815,10 @@ int main(int argc, char *argv[]) {
 
     string query_fastq_truct = query_file_path.substr(query_file_path.find_last_of("/") + 1);
     query_fastq_truct = query_fastq_truct.substr(0, query_fastq_truct.find_last_of("."));
-    string output_unclassified_path = output_result_dir + "/" + "unclassified-seq_" + query_fastq_truct;
-    string output_classified_path = output_result_dir + "/" + "classified-seq_" + query_fastq_truct;
+    string output_unclassified_path =
+        output_result_dir + "/" + "unclassified-seq_" + query_fastq_truct;
+    string output_classified_path =
+        output_result_dir + "/" + "classified-seq_" + query_fastq_truct;
     string output_distances_path = output_result_dir + "/" + "kmer-distances_" + query_fastq_truct;
     string output_matches_path = output_result_dir + "/" + "match-info_" + query_fastq_truct;
 
@@ -951,13 +967,17 @@ int main(int argc, char *argv[]) {
                     if (update_index && exact_match) {
 #pragma omp critical
                       {
-                        update_class_index(index_arr_0, index_arr_1, count_arr_0, count_arr_1, seen_0, seen_1,
-                                           enc_arr_ind, encoding_idx, filename_index, lookup_table);
+                        update_class_index(index_arr_0, index_arr_1, count_arr_0, count_arr_1,
+                                           seen_0, seen_1, enc_arr_ind, encoding_idx,
+                                           filename_index, lookup_table);
                       }
                     }
                     if (init_index && exact_match) {
 #pragma omp critical
-                      { update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, enc_arr_ind, encoding_idx); }
+                      {
+                        update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, enc_arr_ind,
+                                          encoding_idx);
+                      }
                     }
                     if ((dist == min_dist) && save_matches) {
                       if (enc_arr_ind == 0) {
@@ -968,20 +988,23 @@ int main(int argc, char *argv[]) {
                     }
 
                     // For each signature pointed row.
-                    if (kmer_found && (!save_distances || exact_match) && (!init_index || exact_match) &&
-                        (!update_index || exact_match) && (!save_matches || exact_match)) {
+                    if (kmer_found && (!save_distances || exact_match) &&
+                        (!init_index || exact_match) && (!update_index || exact_match) &&
+                        (!save_matches || exact_match)) {
                       break;
                     }
                   }
                 }
                 // For each OR gate.
-                if (kmer_found && (!save_distances || exact_match) && (!init_index || exact_match) &&
-                    (!update_index || exact_match) && (!save_matches || exact_match)) {
+                if (kmer_found && (!save_distances || exact_match) &&
+                    (!init_index || exact_match) && (!update_index || exact_match) &&
+                    (!save_matches || exact_match)) {
                   break;
                 }
               }
               // For each k-mer.
-              if ((num_matched >= c) && (!save_distances) && (!init_index) && (!update_index) && (!save_matches)) {
+              if ((num_matched >= c) && (!save_distances) && (!init_index) && (!update_index) &&
+                  (!save_matches)) {
                 break;
               }
               if (min_dist <= maximum_distance) {
@@ -995,7 +1018,8 @@ int main(int argc, char *argv[]) {
             }
           }
           // For each line.
-          if ((num_matched >= c) && (!save_distances) && (!init_index) && (!update_index) && (!save_matches)) {
+          if ((num_matched >= c) && (!save_distances) && (!init_index) && (!update_index) &&
+              (!save_matches)) {
             break;
           }
         }
@@ -1068,17 +1092,22 @@ int main(int argc, char *argv[]) {
                       }
 
                       uint8_t dist = hd(b_enc, test_enc);
-                      check_distance(dist, p, min_dist, kmer_found, exact_match, num_matched_reverse);
+                      check_distance(dist, p, min_dist, kmer_found, exact_match,
+                                     num_matched_reverse);
                       if (update_index && exact_match) {
 #pragma omp critical
                         {
-                          update_class_index(index_arr_0, index_arr_1, count_arr_0, count_arr_1, seen_0, seen_1,
-                                             enc_arr_ind, encoding_idx, filename_index, lookup_table);
+                          update_class_index(index_arr_0, index_arr_1, count_arr_0, count_arr_1,
+                                             seen_0, seen_1, enc_arr_ind, encoding_idx,
+                                             filename_index, lookup_table);
                         }
                       }
                       if (init_index && exact_match) {
 #pragma omp critical
-                        { update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, enc_arr_ind, encoding_idx); }
+                        {
+                          update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, enc_arr_ind,
+                                            encoding_idx);
+                        }
                       }
                       if ((dist == min_dist) && save_matches) {
                         if (enc_arr_ind == 0) {
@@ -1089,21 +1118,23 @@ int main(int argc, char *argv[]) {
                       }
 
                       // For each signature pointed row.
-                      if (kmer_found && (!save_distances || exact_match) && (!init_index || exact_match) &&
-                          (!update_index || exact_match) && (!save_matches || exact_match)) {
+                      if (kmer_found && (!save_distances || exact_match) &&
+                          (!init_index || exact_match) && (!update_index || exact_match) &&
+                          (!save_matches || exact_match)) {
                         break;
                       }
                     }
                   }
                   // For each OR gate.
-                  if (kmer_found && (!save_distances || exact_match) && (!init_index || exact_match) &&
-                      (!update_index || exact_match) && (!save_matches || exact_match)) {
+                  if (kmer_found && (!save_distances || exact_match) &&
+                      (!init_index || exact_match) && (!update_index || exact_match) &&
+                      (!save_matches || exact_match)) {
                     break;
                   }
                 }
                 // For each k-mer.
-                if ((num_matched_reverse >= c) && (!save_distances) && (!init_index) && (!update_index) &&
-                    (!save_matches)) {
+                if ((num_matched_reverse >= c) && (!save_distances) && (!init_index) &&
+                    (!update_index) && (!save_matches)) {
                   break;
                 }
                 if (min_dist <= maximum_distance) {
@@ -1117,8 +1148,8 @@ int main(int argc, char *argv[]) {
               }
             }
             // For each line.
-            if ((num_matched_reverse >= c) && (!save_distances) && (!init_index) && (!update_index) &&
-                (!save_matches)) {
+            if ((num_matched_reverse >= c) && (!save_distances) && (!init_index) &&
+                (!update_index) && (!save_matches)) {
               break;
             }
           }
@@ -1132,8 +1163,8 @@ int main(int argc, char *argv[]) {
         if (save_matches) {
 #pragma omp critical
           {
-            output_matches(ofs_match_information, name, match_indices, match_distances, reverse_match_indices,
-                           reverse_match_distances);
+            output_matches(ofs_match_information, name, match_indices, match_distances,
+                           reverse_match_indices, reverse_match_distances);
           }
         }
 
@@ -1176,7 +1207,8 @@ int main(int argc, char *argv[]) {
         exit(1);
       }
       // Write index array-0.
-      fwrite(index_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], wfidx);
+      fwrite(index_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m],
+             wfidx);
       fclose(wfidx);
     }
     for (int m = 0; m < encf_chunks; m++) {
@@ -1187,7 +1219,8 @@ int main(int argc, char *argv[]) {
         exit(1);
       }
       // Write index array-1.
-      fwrite(index_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], wfidx);
+      fwrite(index_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m],
+             wfidx);
       fclose(wfidx);
     }
   }
@@ -1200,7 +1233,8 @@ int main(int argc, char *argv[]) {
         exit(1);
       }
       // Write count array-0.
-      fwrite(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], wfcount);
+      fwrite(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m],
+             wfcount);
       fclose(wfcount);
     }
     for (int m = 0; m < encf_chunks; m++) {
@@ -1211,7 +1245,8 @@ int main(int argc, char *argv[]) {
         exit(1);
       }
       // Write count array-1.
-      fwrite(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], wfcount);
+      fwrite(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m],
+             wfcount);
       fclose(wfcount);
     }
   }
@@ -1225,8 +1260,8 @@ int main(int argc, char *argv[]) {
   delete[] enc_arr_id;
 
   end = chrono::steady_clock::now();
-  cout << "Done matching for all. Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds." << endl;
+  cout << "Done matching for all. Time so far: "
+       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl;
 
   return 0;
 }
@@ -1383,8 +1418,8 @@ uint8_t get_enc_id(uint64_t sind, uint8_t enc_arr_id[]) {
   return (enc_arr_ind);
 }
 
-void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist, bool &kmer_found, bool &exact_match,
-                    uint8_t &num_matched) {
+void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist, bool &kmer_found,
+                    bool &exact_match, uint8_t &num_matched) {
   if ((!kmer_found) && (dist <= p)) {
     kmer_found = true;
     num_matched += 1;
@@ -1395,7 +1430,8 @@ void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist, bool &kmer_fo
   exact_match = dist == 0;
 }
 
-void output_reads(ofstream &ofs_reads, string name, string orig_read, string line_third, string line_fourth) {
+void output_reads(ofstream &ofs_reads, string name, string orig_read, string line_third,
+                  string line_fourth) {
   ofs_reads << name << endl;
   ofs_reads << orig_read << endl;
   // Output separator and quality.
@@ -1403,7 +1439,8 @@ void output_reads(ofstream &ofs_reads, string name, string orig_read, string lin
   ofs_reads << line_fourth << endl;
 }
 
-void output_distances(ofstream &ofs_kmer_distances, string name, map<uint64_t, uint64_t> min_distances,
+void output_distances(ofstream &ofs_kmer_distances, string name,
+                      map<uint64_t, uint64_t> min_distances,
                       map<uint64_t, uint64_t> reverse_min_distances) {
   ofs_kmer_distances << name << "\t"
                      << "--";
@@ -1478,9 +1515,10 @@ void read_lookup_table(string filename, vector<vector<uint16_t>> &lookup_table) 
   }
 }
 
-void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[], uint16_t count_arr_0[], uint16_t count_arr_1[],
-                        vector<bool> &seen_0, vector<bool> &seen_1, uint8_t enc_arr_ind, uint32_t encoding_idx,
-                        uint16_t filename_index, vector<vector<uint16_t>> &lookup_table) {
+void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[], uint16_t count_arr_0[],
+                        uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1,
+                        uint8_t enc_arr_ind, uint32_t encoding_idx, uint16_t filename_index,
+                        vector<vector<uint16_t>> &lookup_table) {
   float p_update;
   float w = 5.0;
   float s = 4.0;
@@ -1489,7 +1527,8 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[], uint16_t
   if (enc_arr_ind == 0) {
     if (!seen_0[encoding_idx]) {
       seen_0[encoding_idx] = true;
-      p_update = min(1.0, pow(1.0 / w, 2) + (s / max(s, s + (float)count_arr_0[encoding_idx] - w)));
+      p_update =
+          min(1.0, pow(1.0 / w, 2) + (s / max(s, s + (float)count_arr_0[encoding_idx] - w)));
       bernoulli_distribution btrial(p_update);
       bool update = btrial(gen);
       if (update) {
@@ -1504,7 +1543,8 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[], uint16_t
   } else {
     if (!seen_1[encoding_idx]) {
       seen_1[encoding_idx] = true;
-      p_update = min(1.0, pow(1.0 / w, 2) + (s / max(s, s + (float)count_arr_1[encoding_idx] - w)));
+      p_update =
+          min(1.0, pow(1.0 / w, 2) + (s / max(s, s + (float)count_arr_1[encoding_idx] - w)));
       bernoulli_distribution btrial(p_update);
       bool update = btrial(gen);
       if (update) {
@@ -1519,8 +1559,8 @@ void update_class_index(uint16_t index_arr_0[], uint16_t index_arr_1[], uint16_t
   }
 }
 
-void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1,
-                       uint8_t enc_arr_ind, uint32_t encoding_idx) {
+void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0,
+                       vector<bool> &seen_1, uint8_t enc_arr_ind, uint32_t encoding_idx) {
   if (enc_arr_ind == 0) {
     if (!seen_0[encoding_idx]) {
       count_arr_0[encoding_idx]++;

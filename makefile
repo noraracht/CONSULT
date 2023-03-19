@@ -1,4 +1,4 @@
-all: minimize map search
+all: minimize map search classify
 	
 minimize:
 	g++ minimize.cpp -std=c++11 -o minimize
@@ -9,6 +9,9 @@ map:
 search:
 	g++ consult_search.cpp -std=c++11 -fopenmp -O3 -o consult_search
 
+classify:
+	g++ consult_classify.cpp -std=c++11 -fopenmp -O3 -o consult_classify
+
 clean:
-	rm -f ./minimize ./consult_map ./consult_search
+	rm -f ./minimize ./consult_map ./consult_search ./consult_classify
 	@echo "Succesfully cleaned."
