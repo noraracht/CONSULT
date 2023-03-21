@@ -10,7 +10,6 @@
 #include <string>
 #include <time.h>
 
-#define VERSION 3.0
 #define CANONICAL_KMER_LENGTH 35
 #define MINIMIZER_KMER_LENGTH 32
 
@@ -21,7 +20,6 @@ int main(int argc, char *argv[]) {
   srand(time(NULL));
 
   // Display version number.
-  cout << "v." << std::fixed << std::setprecision(1) << VERSION << endl;
 
   string input_fasta_file;
   string output_fasta_file;
@@ -95,8 +93,7 @@ int main(int argc, char *argv[]) {
   }
   cout << "Output file : " << output_fasta_file << endl << endl;
 
-  cout << "CANONICAL_KMER_LENGTH (k-mer length) = "
-       << int(CANONICAL_KMER_LENGTH) << endl;
+  cout << "Canonical k-mer length = " << int(CANONICAL_KMER_LENGTH) << endl;
   cout << "Minimizer length = " << MINIMIZER_KMER_LENGTH << endl << endl;
 
   string line;
@@ -140,8 +137,7 @@ int main(int argc, char *argv[]) {
   // Recording end time.
   auto end = chrono::steady_clock::now();
   cout << "-- Done writing. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds." << endl;
+       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl;
 
   return 0;
 }

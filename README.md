@@ -259,7 +259,7 @@ Description of CONSULT arguments
 
 - ``-i`` or ``--input-fasta-file``: input ``.fasta`` file to construct library.
 - ``-o`` or ``--output-library-dir``: output path to the directory that will constitute the CONSULT library.
-- ``-h`` or ``--number-of-postitions``: number of randomly positioned bits to compute LSH.
+- ``-h`` or ``--number-of-positions``: number of randomly positioned bits to compute LSH.
 - ``-t`` or ``--tag-size``: number of bits to be used as tag.
 - ``-l`` or ``--number-of-tables``: number of tables, i.e., number of hash functions.
 - ``-b`` or ``--column-per-tag``: number of columns per each tag partition, i.e., number of *k*-mers each encoding can map to.

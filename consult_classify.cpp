@@ -18,7 +18,7 @@
 using namespace std;
 
 #define THREAD_COUNT_OPT 'T'
-#define TAXONOMY_PATH_OPT 'A'
+#define TAXONOMY_LOOKUP_PATH_OPT 'A'
 #define KMER_LENGTH 32
 
 namespace TaxonomicInfo {
@@ -58,12 +58,12 @@ vector<string> list_dir(const char *path) {
   return (userString);
 }
 
-void read_taxonomy_lookup(string filepath, unordered_map<uint64_t, vector<uint64_t>> &ancestor_map) {
+void read_taxonomy_lookup(string filepath,
+                          unordered_map<uint64_t, vector<uint64_t>> &taxonomy_lookup) {
   ifstream ftable;
   ftable.open(filepath);
-
   if (!ftable) {
-    cout << "Cannot open file for LCA lookup table." << endl;
+    cout << "Cannot open file for taxonomic lookup table." << endl;
     exit(1);
   }
 
@@ -73,13 +73,13 @@ void read_taxonomy_lookup(string filepath, unordered_map<uint64_t, vector<uint64
     getline(iss, taxIDstr, ' ');
     uint64_t taxID = stoi(taxIDstr);
 
-    vector<uint64_t> ancestors;
-    string ancestorID;
+    vector<uint64_t> lineage;
+    string next_taxIDstr;
 
-    while (getline(iss, ancestorID, ',')) {
-      ancestors.push_back(stoi(ancestorID));
+    while (getline(iss, next_taxIDstr, ',')) {
+      lineage.push_back(stoi(next_taxIDstr));
     }
-    ancestor_map.insert({taxID, ancestors});
+    taxonomy_lookup.insert({taxID, lineage});
   }
 }
 
@@ -135,20 +135,20 @@ void read_matches(string filepath, vector<read_info> &all_read_info) {
 }
 
 unordered_map<uint64_t, float>
-get_level_votes(kmer_match amatch, unordered_map<uint64_t, vector<uint64_t>> &ancestor_map) {
+get_level_votes(kmer_match amatch, unordered_map<uint64_t, vector<uint64_t>> &taxonomy_lookup) {
   uint16_t k = KMER_LENGTH;
   unordered_map<uint64_t, float> match_votes;
-  for (uint64_t a_taxID : ancestor_map[amatch.taxID]) {
+  for (uint64_t a_taxID : taxonomy_lookup[amatch.taxID]) {
     if ((a_taxID > 0) && (amatch.taxID > 0))
       match_votes[a_taxID] = amatch.vote;
   }
   return match_votes;
 }
 
-void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> ancestor_map,
+void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup,
                      vector<read_info> &all_read_info, int thread_count) {
-#pragma omp parallel for schedule(dynamic, 1) num_threads(thread_count)                              \
-    shared(ancestor_map, all_read_info)
+#pragma omp parallel for schedule(dynamic, 1) num_threads(thread_count)                           \
+    shared(taxonomy_lookup, all_read_info)
   for (int ix = 0; ix < all_read_info.size(); ++ix) {
     read_info &curr_read = all_read_info[ix];
     uint64_t rootID = 1;
@@ -162,11 +162,11 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> ancestor_map,
       unordered_map<uint16_t, unordered_set<uint64_t>> taxIDs_by_level;
 
       for (auto &curr_match : curr_read.match_vector) {
-        unordered_map<uint64_t, float> match_votes = get_level_votes(curr_match, ancestor_map);
+        unordered_map<uint64_t, float> match_votes = get_level_votes(curr_match, taxonomy_lookup);
         for (auto &vote : match_votes) {
           vote_collector[vote.first].push_back(vote.second);
           all_taxIDs.insert(vote.first);
-          taxIDs_by_level[(int)ancestor_map[vote.first].size()].insert(vote.first);
+          taxIDs_by_level[(int)taxonomy_lookup[vote.first].size()].insert(vote.first);
         }
       }
 
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
     static struct option long_options[] = {
         {"input-matches-dir", 1, 0, 'i'},
         {"output-predictions-dir", 1, 0, 'o'},
-        {"taxonomy-path", 1, 0, TAXONOMY_PATH_OPT},
+        {"taxonomy-lookup-path", 1, 0, TAXONOMY_LOOKUP_PATH_OPT},
         {"thread-count", 1, 0, THREAD_COUNT_OPT},
         {0, 0, 0, 0},
     };
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
 
     if (cf_tmp == -1)
       break;
-    else if (cf_tmp == TAXONOMY_PATH_OPT)
+    else if (cf_tmp == TAXONOMY_LOOKUP_PATH_OPT)
       taxonomy_lookup_path = optarg;
     else if (cf_tmp == THREAD_COUNT_OPT)
       thread_count = atoi(optarg); // Default is 1.
@@ -304,8 +304,8 @@ int main(int argc, char *argv[]) {
     string output_path = output_predictions_dir + "/" + "predictions_" + query_name;
     cout << "Now processing: " << query_name << endl;
 
-    unordered_map<uint64_t, vector<uint64_t>> ancestor_map;
-    read_taxonomy_lookup(taxonomy_lookup_path, ancestor_map);
+    unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup;
+    read_taxonomy_lookup(taxonomy_lookup_path, taxonomy_lookup);
 
     vector<read_info> all_read_info;
     t1 = chrono::steady_clock::now();
@@ -316,7 +316,7 @@ int main(int argc, char *argv[]) {
     total_numberOfReads += all_read_info.size();
 
     t1 = chrono::steady_clock::now();
-    aggregate_votes(ancestor_map, all_read_info, thread_count);
+    aggregate_votes(taxonomy_lookup, all_read_info, thread_count);
     t2 = chrono::steady_clock::now();
     total_classificationTime += chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 

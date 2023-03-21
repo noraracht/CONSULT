@@ -1,37 +1,35 @@
-#include <algorithm>           // for sort, count, fill
-#include <bits/getopt_core.h>  // for optarg, optopt, optind, opterr
-#include <bits/stdint-uintn.h> // for uint64_t, uint8_t, uint32_t,uint16_t
-#include <cassert>             // for assert
-#include <chrono>              // for seconds, duration_cast, operator-
-#include <cmath>               // for round, pow, ceil
-#include <cstdint>             // for int8_t, uint64_t, uint8_t
-#include <cstdio>              // for fwrite, fclose, fopen, fprintf, FILE
+#include <algorithm>
+#include <bits/getopt_core.h>
+#include <bits/stdint-uintn.h>
+#include <cassert>
+#include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
 #include <cstdlib>
-#include <cstring> // for strerror
-#include <ctype.h> // for isprint
+#include <cstring>
 #include <ctype.h>
-#include <errno.h>            // for errno
-#include <ext/alloc_traits.h> // for __alloc_traits<>::value_type
+#include <errno.h>
+#include <ext/alloc_traits.h>
 #include <fstream>
-#include <functional> // for greater
-#include <getopt.h>   // for getopt_long, option
-#include <iomanip>    // for operator<<, setprecision
-#include <iostream>   // for operator<<, endl, basic_ostream, ostream
-#include <memory>     // for allocator_traits<>::value_type
-#include <new>        // for bad_alloc
-#include <numeric>    // for accumulate
+#include <functional>
+#include <getopt.h>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <new>
+#include <numeric>
 #include <sstream>
 #include <stdio.h>
-#include <stdlib.h>   // for atoi, exit, rand, srand, abort
-#include <string>     // for operator+, string, allocator, char_tr...
-#include <sys/stat.h> // for mkdir, S_IROTH, S_IRWXG, S_IRWXU, S_I...
+#include <stdlib.h>
+#include <string>
+#include <sys/stat.h>
 #include <sys/types.h>
-#include <time.h> // for time
-#include <tuple>  // for operator<, get, swap, make_tuple, tuple
+#include <time.h>
+#include <tuple>
 #include <unistd.h>
-#include <vector> // for vector, vector<>::value_type
+#include <vector>
 
-#define VERSION 17.1
 #define KMER_LENGTH 32
 
 #define SIGF_CHUNKS 24
@@ -53,9 +51,6 @@ uint64_t count_lines(const vector<char> &buff, int size);
 int main(int argc, char *argv[]) {
   auto start = chrono::steady_clock::now();
   srand(time(NULL));
-
-  // Display version number.
-  cout << "v." << std::fixed << std::setprecision(1) << VERSION << endl;
 
   string input_fasta_file = string();
   string output_library_dir = string();
@@ -79,10 +74,10 @@ int main(int argc, char *argv[]) {
 
   while (1) {
     static struct option long_options[] = {
-        {"input-fasta-file", 1, 0, 'i'},     {"output-library-dir", 1, 0, 'o'},
-        {"number-of-postitions", 1, 0, 'h'}, {"tag-size", 1, 0, 't'},
-        {"distance-threshold", 1, 0, 'p'},   {"number-of-tables", 1, 0, 'l'},
-        {"column-per-tag", 1, 0, 'b'},       {0, 0, 0, 0},
+        {"input-fasta-file", 1, 0, 'i'},    {"output-library-dir", 1, 0, 'o'},
+        {"number-of-positions", 1, 0, 'h'}, {"tag-size", 1, 0, 't'},
+        {"distance-threshold", 1, 0, 'p'},  {"number-of-tables", 1, 0, 'l'},
+        {"column-per-tag", 1, 0, 'b'},      {0, 0, 0, 0},
     };
 
     int option_index = 0;
@@ -226,13 +221,30 @@ int main(int argc, char *argv[]) {
   uint64_t sigs_row_count = pow(2, 2 * h - t); // # of rows; 2^(2h-t)
   memory_usage_min = (float)(4 * b * pow(2, 2 * h) * l + 8 * kmer_count) / pow(10.0, 9);
 
-  assert(t > 0);
-  assert(p >= 0);
-  assert(l >= 1);
-  assert(h >= 1);
-  assert(b >= 1);
-  assert(2 * h > t);
-  assert(memory_usage_min > 0);
+  if (t <= 0) {
+    cout << "Number of tags must be positive." << endl;
+    exit(1);
+  }
+  if (p <= 0) {
+    cout << "The value of p must be positive." << endl;
+    exit(1);
+  }
+  if (l < 1) {
+    cout << "The value of l must be greater than 1." << endl;
+    exit(1);
+  }
+  if (h < 1) {
+    cout << "Number of positions to compute the LSH be greater than 1." << endl;
+    exit(1);
+  }
+  if (b < 1) {
+    cout << "Number of rows must be greater than 1." << endl;
+    exit(1);
+  }
+  if (2 * h <= t) {
+    cout << "Following inequality must be satisified: 2h>t." << endl;
+    exit(1);
+  }
 
   cout << "Parameter configuration:" << endl;
   cout << "------------------------" << endl;
@@ -280,10 +292,9 @@ int main(int argc, char *argv[]) {
   }
 
   // Initialize tag array to -1.
-  /* for (uint64_t j = 0; j < sigs_row_count * b * partitions * l; */
-  /*      j++) { */
-  /*   tag_arr[j] = -1; */
-  /* } */
+  for (uint64_t j = 0; j < sigs_row_count * b * partitions * l; j++) {
+    tag_arr[j] = -1;
+  }
 
   // Allocate encoding array.
   uint64_t encode_arr_size;
@@ -458,7 +469,8 @@ int main(int argc, char *argv[]) {
         // encoding as sigs row number.
         big_sig_hash = sig_hash & big_sig_mask;
 
-        uint64_t tmp_idx = (sigs_row_count * b * partitions * i) + (big_sig_hash * b * partitions) +
+        uint64_t tmp_idx = (sigs_row_count * b * partitions * i) +
+                           (big_sig_hash * b * partitions) +
                            sigs_indicator_arr[sigs_row_count * i + big_sig_hash];
 
         // Check is row space is available for forward k-mer.
@@ -842,8 +854,7 @@ int main(int argc, char *argv[]) {
 
   // Compute the usage of rows in signature matrix to determine how many
   // positions in each row are used.
-  vector<uint64_t> sig_row_count_vec(b * partitions + 1,
-                                     0); // Row count vector.
+  vector<uint64_t> sig_row_count_vec(b * partitions + 1, 0); // Row count vector.
   // Traverse indicator array to compute filled positions.
   for (int i = 0; i < l; i++) {
     for (uint64_t r = 0; r < sigs_row_count; r++) {
@@ -874,8 +885,8 @@ int main(int argc, char *argv[]) {
   delete[] new_tag_arr;
 
   end = chrono::steady_clock::now();
-  cout << "Done writing. Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds." << endl;
+  cout << "Done writing. Time so far: "
+       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl;
 
   return 0;
 }
