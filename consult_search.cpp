@@ -46,7 +46,7 @@
 #define FILENAME_MAP_PATH_OPT 'F'
 
 #define READ_PARALLELISM
-#define FILE_PARALLELISM
+/* #define FILE_PARALLELISM */
 
 using namespace std;
 
