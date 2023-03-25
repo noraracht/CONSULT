@@ -216,7 +216,6 @@ void write_predictions_to_file(string filepath, vector<read_info> all_read_info)
       curr_read = all_read_info[2 * ix];
     }
     outfile << curr_read.readID << "\t" << read_form << "\t" << to_string(get<0>(curr_read.pred_taxID_info))
-            << "\t"
             << "\t" << to_string(get<1>(curr_read.pred_taxID_info)) << "\t"
             << to_string(get<2>(curr_read.pred_taxID_info)) << endl;
   }
