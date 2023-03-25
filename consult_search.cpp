@@ -55,8 +55,7 @@ vector<string> list_dir(const char *path);
 uint8_t hd(uint64_t x, uint64_t y);
 uint8_t get_encid(uint64_t sind, uint8_t encid_arr[]);
 uint64_t encode_kmer_bits_reverse(const char *s, vector<int> pos);
-uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
-                          vector<int8_t> bits_to_grab);
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts, vector<int8_t> bits_to_grab);
 
 void encode_kmer(const char s[], uint64_t &b_enc, uint64_t &b_sig);
 void encode_kmer_reverse(const char s[], uint64_t &b_enc, uint64_t &b_sig);
@@ -64,41 +63,32 @@ void encode_kmer_reverse(const char s[], uint64_t &b_enc, uint64_t &b_sig);
 void update_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig);
 void update_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig);
 
-void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
-                    bool &kmer_found, bool &closest_match, bool &exact_match,
-                    uint8_t &num_matched);
+void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist, bool &kmer_found, bool &closest_match,
+                    bool &exact_match, uint8_t &num_matched);
 
-void output_reads(ofstream &ofs_reads, string name, string orig_read,
-                  string line_third, string line_fourth);
-void output_distances(ofstream &ofs_kmer_distances, string name,
-                      map<uint64_t, uint64_t> min_distances,
+void output_reads(ofstream &ofs_reads, string name, string orig_read, string line_third, string line_fourth);
+void output_distances(ofstream &ofs_kmer_distances, string name, map<uint64_t, uint64_t> min_distances,
                       map<uint64_t, uint64_t> reverse_min_distances);
-void output_matches(ofstream &ofs_match_information, string name,
-                    vector<uint16_t> match_cIDs,
-                    vector<uint16_t> match_distances,
-                    vector<uint16_t> rc_match_taxIDs,
-                    vector<uint16_t> rc_match_distances,
-                    map<uint16_t, uint64_t> &cID_to_taxID);
+void output_matches(ofstream &ofs_match_information, string name, vector<uint16_t> match_cIDs,
+                    vector<uint16_t> match_distances, vector<uint16_t> rc_match_taxIDs,
+                    vector<uint16_t> rc_match_distances, map<uint16_t, uint64_t> &cID_to_taxID);
 
-void read_filename_map(string filename,
-                       map<string, uint64_t> &filename_to_taxID);
-void read_taxonomy_lookup(
-    string filepath, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup,
-    map<uint64_t, uint16_t> &taxID_to_cID,
-    map<uint16_t, uint64_t> &cID_to_taxID);
+void read_filename_map(string filename, map<string, uint64_t> &filename_to_taxID);
+void read_taxonomy_lookup(string filepath, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup,
+                          map<uint64_t, uint16_t> &taxID_to_cID, map<uint16_t, uint64_t> &cID_to_taxID);
 
-void update_kmer_cID(
-    uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_arr_0[],
-    uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1,
-    uint8_t encid, uint32_t encoding_ix, uint16_t filename_cID,
-    unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup);
-void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[],
-                       vector<bool> &seen_0, vector<bool> &seen_1,
-                       uint8_t encid, uint32_t encoding_ix);
+void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_arr_0[],
+                     uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1, uint8_t encid,
+                     uint32_t encoding_ix, uint16_t filename_cID,
+                     unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup);
+void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0,
+                       vector<bool> &seen_1, uint8_t encid, uint32_t encoding_ix);
 
 map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance);
 
 int main(int argc, char *argv[]) {
+  /* omp_set_nested(1); // Enable nested parallelism */
+  /* omp_set_max_active_levels(2); */
   auto start = chrono::steady_clock::now();
 
   string input_library_dir = string();
@@ -193,8 +183,7 @@ int main(int argc, char *argv[]) {
         break;
       case 'c':
         if (atoi(optarg) < 1) {
-          cout << "Value of -c (--number-of-matches) cannot be smaller than 1."
-               << endl;
+          cout << "Value of -c (--number-of-matches) cannot be smaller than 1." << endl;
           exit(1);
         }
         c = atoi(optarg); // Default is 1.
@@ -220,8 +209,7 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  if ((init_ID && update_ID) || (init_ID && save_matches) ||
-      (update_ID && save_matches)) {
+  if ((init_ID && update_ID) || (init_ID && save_matches) || (update_ID && save_matches)) {
     cout << "Can only do one of initialize, update or save at a time." << endl;
     exit(1);
   }
@@ -240,8 +228,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  if (!(classified_out || unclassified_out || save_distances || init_ID ||
-        update_ID || save_matches)) {
+  if (!(classified_out || unclassified_out || save_distances || init_ID || update_ID || save_matches)) {
     cout << "Nothing to do! Use at least one of the following flags:" << endl;
     cout << "'--classified-out' to report classified reads," << endl;
     cout << "'--unclassified-out' to report unclassified reads," << endl;
@@ -304,19 +291,22 @@ int main(int argc, char *argv[]) {
     cout << "Maximum distance to save is " << maximum_distance << "." << endl;
   }
 
-  cout << endl << "k-mer statistics:" << endl;
+  cout << endl
+       << "k-mer statistics:" << endl;
   cout << "-----------------" << endl;
   cout << "k-mer count = " << kmer_count << endl;
   cout << "k-mer count array-0 = " << encli_0 << endl;
   cout << "k-mer count array-1 = " << encli_1 << endl;
-  cout << "-----------------" << endl << endl;
+  cout << "-----------------" << endl
+       << endl;
 
   cout << "Library size information:" << endl;
   cout << "-------------------------" << endl;
   cout << "Tag array size  = " << new_tag_arr_size << endl;
   cout << "Signature array size = " << sigs_arr_size << endl;
   cout << "Encoding ID array size  = " << encid_arr_size << endl;
-  cout << "-------------------------" << endl << endl;
+  cout << "-------------------------" << endl
+       << endl;
 
   int vec_size = 0;
   vector<vector<int8_t>> shifts;
@@ -373,7 +363,8 @@ int main(int argc, char *argv[]) {
   cout << "Tag size in bits = " << t << endl;
   cout << "Tag mask = " << tag_mask << endl;
   cout << "Big sig mask = " << big_sig_mask << endl;
-  cout << "--------------------" << endl << endl;
+  cout << "--------------------" << endl
+       << endl;
 
   // Read file chunk information.
   uint8_t sigf_chunks;
@@ -502,15 +493,13 @@ int main(int argc, char *argv[]) {
       count_arr_0 = new uint16_t[encli_0];
       cout << "Done memory allocation for the count array-1." << endl;
     } catch (bad_alloc &ba) {
-      cerr << "Failed to allocate memory for count array-1." << ba.what()
-           << endl;
+      cerr << "Failed to allocate memory for count array-1." << ba.what() << endl;
     }
     try {
       count_arr_1 = new uint16_t[encli_1];
       cout << "Done memory allocation for the count array-1." << endl;
     } catch (bad_alloc &ba) {
-      cerr << "Failed to allocate memory for count array-1." << ba.what()
-           << endl;
+      cerr << "Failed to allocate memory for count array-1." << ba.what() << endl;
     }
   }
 
@@ -523,7 +512,8 @@ int main(int argc, char *argv[]) {
     cerr << "Failed to allocate memory for encodings." << ba.what() << endl;
   }
 
-  cout << "Memory allocation is completed." << endl << endl;
+  cout << "Memory allocation is completed." << endl
+       << endl;
 
   struct stat s_query_path;
   vector<string> query_file_list;
@@ -607,14 +597,12 @@ int main(int argc, char *argv[]) {
       FILE *f;
       f = fopen(str_map_sig[m].c_str(), "rb");
       if (!f) {
-        cout << "Cannot open file for signatures in the library directory!"
-             << endl;
+        cout << "Cannot open file for signatures in the library directory!" << endl;
         exit(1);
       }
 
       // Read signs.
-      temp_count = fread(sigs_arr + sig_chunk_cumcounts[m], sizeof(uint32_t),
-                         sig_chunk_counts[m], f);
+      temp_count = fread(sigs_arr + sig_chunk_cumcounts[m], sizeof(uint32_t), sig_chunk_counts[m], f);
 #pragma omp atomic
       total_sigs_read += temp_count;
 
@@ -635,8 +623,7 @@ int main(int argc, char *argv[]) {
       }
 
       // Read tags.
-      temp_count = fread(tag_arr + tag_chunk_cumcounts[m], sizeof(int8_t),
-                         tag_chunk_counts[m], ftag);
+      temp_count = fread(tag_arr + tag_chunk_cumcounts[m], sizeof(int8_t), tag_chunk_counts[m], ftag);
 #pragma omp atomic
       total_tags_read += temp_count;
 
@@ -652,14 +639,13 @@ int main(int argc, char *argv[]) {
       FILE *fenc;
       fenc = fopen(str_map_enc[m].c_str(), "rb");
       if (!fenc) {
-        cout << "Cannot open file for encodings in the library directory!"
-             << endl;
+        cout << "Cannot open file for encodings in the library directory!" << endl;
         exit(1);
       }
 
       // Read encodings.
-      temp_count = fread(encode_arr_0 + enc_chunk_cumcounts_0[m],
-                         sizeof(uint64_t), enc_chunk_counts_0[m], fenc);
+      temp_count =
+          fread(encode_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint64_t), enc_chunk_counts_0[m], fenc);
 #pragma omp atomic
       num_pairs_0 += temp_count;
 
@@ -679,8 +665,8 @@ int main(int argc, char *argv[]) {
       }
 
       // Read encodings.
-      temp_count = fread(encode_arr_1 + enc_chunk_cumcounts_1[m],
-                         sizeof(uint64_t), enc_chunk_counts_1[m], fence);
+      temp_count =
+          fread(encode_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint64_t), enc_chunk_counts_1[m], fence);
 #pragma omp atomic
       num_pairs_1 += temp_count;
 
@@ -697,14 +683,12 @@ int main(int argc, char *argv[]) {
         FILE *fcID;
         fcID = fopen(str_map_cID[m].c_str(), "rb");
         if (!fcID) {
-          cout << "Cannot open file for k-mer cIDs in the library directory!"
-               << endl;
+          cout << "Cannot open file for k-mer cIDs in the library directory!" << endl;
           exit(1);
         }
 
         // Read k-mer cIDs.
-        fread(cID_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t),
-              enc_chunk_counts_0[m], fcID);
+        fread(cID_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], fcID);
         fclose(fcID);
       }
     }
@@ -716,14 +700,12 @@ int main(int argc, char *argv[]) {
         FILE *fcID;
         fcID = fopen(str_map_cIDe[m].c_str(), "rb");
         if (!fcID) {
-          cout << "Cannot open file for k-mer cIDs in the library directory!"
-               << endl;
+          cout << "Cannot open file for k-mer cIDs in the library directory!" << endl;
           exit(1);
         }
 
         // Read k-mer cIDs.
-        fread(cID_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t),
-              enc_chunk_counts_1[m], fcID);
+        fread(cID_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], fcID);
         fclose(fcID);
       }
     }
@@ -738,14 +720,12 @@ int main(int argc, char *argv[]) {
         FILE *fcount;
         fcount = fopen(str_map_count[m].c_str(), "rb");
         if (!fcount) {
-          cout << "Cannot open file for count in the library directory!"
-               << endl;
+          cout << "Cannot open file for count in the library directory!" << endl;
           exit(1);
         }
 
         // Read k-mer counts.
-        fread(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t),
-              enc_chunk_counts_0[m], fcount);
+        fread(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], fcount);
         fclose(fcount);
       }
     }
@@ -757,14 +737,12 @@ int main(int argc, char *argv[]) {
         FILE *fcounte;
         fcounte = fopen(str_map_counte[m].c_str(), "rb");
         if (!fcounte) {
-          cout << "Cannot open file for counts in the library directory!"
-               << endl;
+          cout << "Cannot open file for counts in the library directory!" << endl;
           exit(1);
         }
 
         // Read k-mer counts.
-        fread(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t),
-              enc_chunk_counts_1[m], fcounte);
+        fread(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], fcounte);
         fclose(fcounte);
       }
     }
@@ -791,15 +769,13 @@ int main(int argc, char *argv[]) {
     // Read filename look-up table taxonomy IDs.
     read_filename_map(filename_map_path, filename_to_taxID);
     // Read taxonomy lookup table for computing common ancestors.
-    read_taxonomy_lookup(taxonomy_lookup_path, taxonomy_lookup, taxID_to_cID,
-                         cID_to_taxID);
+    read_taxonomy_lookup(taxonomy_lookup_path, taxonomy_lookup, taxID_to_cID, cID_to_taxID);
     for (auto const &kv : filename_to_taxID)
       filename_to_cID[kv.first] = taxID_to_cID[kv.second];
   }
 
 // Read encid array.
-#pragma omp parallel num_threads(thread_count)                                 \
-    shared(encid_arr, total_encid_read)
+#pragma omp parallel num_threads(thread_count) shared(encid_arr, total_encid_read)
   {
 #pragma omp for
     for (int m = 0; m < sigf_chunks; m++) {
@@ -811,8 +787,7 @@ int main(int argc, char *argv[]) {
       }
 
       // Read sigs.
-      temp_count = fread(encid_arr + encid_chunk_cumcounts[m], sizeof(uint8_t),
-                         encid_chunk_counts[m], fencid);
+      temp_count = fread(encid_arr + encid_chunk_cumcounts[m], sizeof(uint8_t), encid_chunk_counts[m], fencid);
 #pragma omp atomic
       total_encid_read += temp_count;
 
@@ -827,12 +802,12 @@ int main(int argc, char *argv[]) {
   cout << "Encoding IDs read: " << total_encid_read << endl;
   cout << "Encodings read to array-0 : " << num_pairs_0 << endl;
   cout << "Encodings read to array-1 : " << num_pairs_1 << endl;
-  cout << "-------------------" << endl << endl;
+  cout << "-------------------" << endl
+       << endl;
 
   auto end = chrono::steady_clock::now();
   cout << "Done reading. Now matching. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds." << endl;
+       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl;
 
   int counter_files = 1;
 
@@ -858,18 +833,12 @@ int main(int argc, char *argv[]) {
       seen_1.resize(encli_1, false);
     }
 
-    string query_fastq_truct =
-        query_file_path.substr(query_file_path.find_last_of("/") + 1);
-    query_fastq_truct =
-        query_fastq_truct.substr(0, query_fastq_truct.find_last_of("."));
-    string output_unclassified_path =
-        output_result_dir + "/" + "unclassified-seq_" + query_fastq_truct;
-    string output_classified_path =
-        output_result_dir + "/" + "classified-seq_" + query_fastq_truct;
-    string output_distances_path =
-        output_result_dir + "/" + "kmer-distances_" + query_fastq_truct;
-    string output_matches_path =
-        output_result_dir + "/" + "match-info_" + query_fastq_truct;
+    string query_fastq_truct = query_file_path.substr(query_file_path.find_last_of("/") + 1);
+    query_fastq_truct = query_fastq_truct.substr(0, query_fastq_truct.find_last_of("."));
+    string output_unclassified_path = output_result_dir + "/" + "unclassified-seq_" + query_fastq_truct;
+    string output_classified_path = output_result_dir + "/" + "classified-seq_" + query_fastq_truct;
+    string output_distances_path = output_result_dir + "/" + "kmer-distances_" + query_fastq_truct;
+    string output_matches_path = output_result_dir + "/" + "match-info_" + query_fastq_truct;
 
     uint16_t filename_cID = filename_to_cID[query_fastq_truct];
 
@@ -949,10 +918,8 @@ int main(int argc, char *argv[]) {
         uint8_t num_matched = 0;
         uint8_t num_matched_reverse = 0;
 
-        map<uint64_t, uint64_t> min_distances =
-            init_distance_map(maximum_distance);
-        map<uint64_t, uint64_t> reverse_min_distances =
-            init_distance_map(maximum_distance);
+        map<uint64_t, uint64_t> min_distances = init_distance_map(maximum_distance);
+        map<uint64_t, uint64_t> reverse_min_distances = init_distance_map(maximum_distance);
 
         vector<uint16_t> match_distances;
         vector<uint16_t> match_cIDs;
@@ -989,8 +956,7 @@ int main(int argc, char *argv[]) {
               uint16_t kmer_ID;
 
               for (int64_t funci = 0; funci < l; funci++) {
-                kmer_sig =
-                    encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
+                kmer_sig = encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 
                 tag = (kmer_sig >> ((2 * h) - t)) & tag_mask;
                 big_sig_hash = kmer_sig & big_sig_mask;
@@ -1009,8 +975,7 @@ int main(int argc, char *argv[]) {
                   for (uint64_t enc = enc_start; enc < enc_end; enc++) {
                     encid = get_encid(b * f_tmp + b * s_tmp + enc, encid_arr);
 
-                    uint32_t encoding_ix =
-                        sigs_arr[b * f_tmp + b * s_tmp + enc];
+                    uint32_t encoding_ix = sigs_arr[b * f_tmp + b * s_tmp + enc];
                     if (encid == 0) {
                       test_enc = encode_arr_0[encoding_ix];
                     } else {
@@ -1018,18 +983,20 @@ int main(int argc, char *argv[]) {
                     }
 
                     uint8_t dist = hd(b_enc, test_enc);
-                    check_distance(dist, p, min_dist, kmer_found, closest_match,
-                                   exact_match, num_matched);
+                    check_distance(dist, p, min_dist, kmer_found, closest_match, exact_match, num_matched);
 
                     if (update_ID && exact_match) {
-                      update_kmer_cID(cID_arr_0, cID_arr_1, count_arr_0,
-                                      count_arr_1, seen_0, seen_1, encid,
-                                      encoding_ix, filename_cID,
-                                      taxonomy_lookup);
+#pragma omp critical
+                      {
+                        update_kmer_cID(cID_arr_0, cID_arr_1, count_arr_0, count_arr_1, seen_0, seen_1, encid,
+                                        encoding_ix, filename_cID, taxonomy_lookup);
+                      }
                     }
                     if (init_ID && exact_match) {
-                      update_kmer_count(count_arr_0, count_arr_1, seen_0,
-                                        seen_1, encid, encoding_ix);
+#pragma omp critical
+                      {
+                        update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, encid, encoding_ix);
+                      }
                     }
                     if (closest_match && save_matches) {
                       if (encid == 0) {
@@ -1052,8 +1019,7 @@ int main(int argc, char *argv[]) {
                 }
               }
               // For each k-mer.
-              if ((!init_ID) && (!update_ID) && (!save_matches) &&
-                  (!save_distances) && (num_matched >= c)) {
+              if ((!init_ID) && (!update_ID) && (!save_matches) && (!save_distances) && (num_matched >= c)) {
                 break;
               }
               if (min_dist <= maximum_distance) {
@@ -1067,8 +1033,7 @@ int main(int argc, char *argv[]) {
             }
           }
           // For each cont.
-          if ((!init_ID) && (!update_ID) && (!save_matches) &&
-              (num_matched >= c) && (!save_distances)) {
+          if ((!init_ID) && (!update_ID) && (!save_matches) && (num_matched >= c) && (!save_distances)) {
             break;
           }
         }
@@ -1111,8 +1076,7 @@ int main(int argc, char *argv[]) {
                 uint16_t kmer_ID;
 
                 for (uint64_t funci = 0; funci < l; funci++) {
-                  kmer_sig =
-                      encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
+                  kmer_sig = encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 
                   tag = (kmer_sig >> ((2 * h) - t)) & tag_mask;
                   big_sig_hash = kmer_sig & big_sig_mask;
@@ -1131,8 +1095,7 @@ int main(int argc, char *argv[]) {
                     for (uint64_t enc = enc_start; enc < enc_end; enc++) {
                       encid = get_encid(b * f_tmp + b * s_tmp + enc, encid_arr);
 
-                      uint32_t encoding_ix =
-                          sigs_arr[f_tmp * b + s_tmp * b + enc];
+                      uint32_t encoding_ix = sigs_arr[f_tmp * b + s_tmp * b + enc];
                       if (encid == 0) {
                         test_enc = encode_arr_0[encoding_ix];
                       } else {
@@ -1140,19 +1103,21 @@ int main(int argc, char *argv[]) {
                       }
 
                       uint8_t dist = hd(b_enc, test_enc);
-                      check_distance(dist, p, min_dist, kmer_found,
-                                     closest_match, exact_match,
+                      check_distance(dist, p, min_dist, kmer_found, closest_match, exact_match,
                                      num_matched_reverse);
 
                       if (update_ID && exact_match) {
-                        update_kmer_cID(cID_arr_0, cID_arr_1, count_arr_0,
-                                        count_arr_1, seen_0, seen_1, encid,
-                                        encoding_ix, filename_cID,
-                                        taxonomy_lookup);
+#pragma omp critical
+                        {
+                          update_kmer_cID(cID_arr_0, cID_arr_1, count_arr_0, count_arr_1, seen_0, seen_1, encid,
+                                          encoding_ix, filename_cID, taxonomy_lookup);
+                        }
                       }
                       if (init_ID && exact_match) {
-                        update_kmer_count(count_arr_0, count_arr_1, seen_0,
-                                          seen_1, encid, encoding_ix);
+#pragma omp critical
+                        {
+                          update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, encid, encoding_ix);
+                        }
                       }
                       if (closest_match && save_matches) {
                         if (encid == 0) {
@@ -1175,8 +1140,7 @@ int main(int argc, char *argv[]) {
                   }
                 }
                 // For each k-mer.
-                if ((!init_ID) && (!update_ID) && (!save_matches) &&
-                    (!save_distances) && (num_matched >= c)) {
+                if ((!init_ID) && (!update_ID) && (!save_matches) && (!save_distances) && (num_matched >= c)) {
                   break;
                 }
                 if (min_dist <= maximum_distance) {
@@ -1190,8 +1154,7 @@ int main(int argc, char *argv[]) {
               }
             }
             // For each cont.
-            if ((!init_ID) && (!update_ID) && (!save_matches) &&
-                (num_matched >= c) && (!save_distances)) {
+            if ((!init_ID) && (!update_ID) && (!save_matches) && (num_matched >= c) && (!save_distances)) {
               break;
             }
           }
@@ -1201,10 +1164,7 @@ int main(int argc, char *argv[]) {
 #ifdef READ_PARALLELISM
 #pragma omp critical
 #endif
-          {
-            output_distances(ofs_kmer_distances, name, min_distances,
-                             reverse_min_distances);
-          }
+          { output_distances(ofs_kmer_distances, name, min_distances, reverse_min_distances); }
         }
 
         if (save_matches) {
@@ -1212,9 +1172,8 @@ int main(int argc, char *argv[]) {
 #pragma omp critical
 #endif
           {
-            output_matches(ofs_match_information, name, match_cIDs,
-                           match_distances, rc_match_taxIDs, rc_match_distances,
-                           cID_to_taxID);
+            output_matches(ofs_match_information, name, match_cIDs, match_distances, rc_match_taxIDs,
+                           rc_match_distances, cID_to_taxID);
           }
         }
 
@@ -1223,10 +1182,7 @@ int main(int argc, char *argv[]) {
 #ifdef READ_PARALLELISM
 #pragma omp critical
 #endif
-            {
-              output_reads(ofs_reads_unclassified, name, orig_read, line_third,
-                           line_fourth);
-            }
+            { output_reads(ofs_reads_unclassified, name, orig_read, line_third, line_fourth); }
           }
         } else if ((num_matched >= c) || (num_matched_reverse >= c)) {
 #ifdef READ_PARALLELISM
@@ -1237,17 +1193,13 @@ int main(int argc, char *argv[]) {
 #ifdef READ_PARALLELISM
 #pragma omp critical
 #endif
-            {
-              output_reads(ofs_reads_classified, name, orig_read, line_third,
-                           line_fourth);
-            }
+            { output_reads(ofs_reads_classified, name, orig_read, line_third, line_fourth); }
           }
         }
       }
     }
 
-    cout << query_file_path << " " << num_lines_read << " " << reads_matched
-         << endl;
+    cout << query_file_path << " " << num_lines_read << " " << reads_matched << endl;
 
     ifs_reads_query.close();
 
@@ -1267,12 +1219,10 @@ int main(int argc, char *argv[]) {
       FILE *wfcID;
       wfcID = fopen(str_map_cID[m].c_str(), "wb");
       if (!wfcID) {
-        cout << "Cannot open file for k-mer cIDs in the library directory!"
-             << endl;
+        cout << "Cannot open file for k-mer cIDs in the library directory!" << endl;
         exit(1);
       }
-      fwrite(cID_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t),
-             enc_chunk_counts_0[m], wfcID);
+      fwrite(cID_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], wfcID);
       fclose(wfcID);
     }
     // Write cIDs-1.
@@ -1280,12 +1230,10 @@ int main(int argc, char *argv[]) {
       FILE *wfcID;
       wfcID = fopen(str_map_cIDe[m].c_str(), "wb");
       if (!wfcID) {
-        cout << "Cannot open file for k-mer cIDs in the library directory!"
-             << endl;
+        cout << "Cannot open file for k-mer cIDs in the library directory!" << endl;
         exit(1);
       }
-      fwrite(cID_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t),
-             enc_chunk_counts_1[m], wfcID);
+      fwrite(cID_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], wfcID);
       fclose(wfcID);
     }
   }
@@ -1295,12 +1243,10 @@ int main(int argc, char *argv[]) {
       FILE *wfcount;
       wfcount = fopen(str_map_count[m].c_str(), "wb");
       if (!wfcount) {
-        cout << "Cannot open file for count-0 in the library directory!"
-             << endl;
+        cout << "Cannot open file for count-0 in the library directory!" << endl;
         exit(1);
       }
-      fwrite(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t),
-             enc_chunk_counts_0[m], wfcount);
+      fwrite(count_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint16_t), enc_chunk_counts_0[m], wfcount);
       fclose(wfcount);
     }
     // Write counts-1.
@@ -1308,12 +1254,10 @@ int main(int argc, char *argv[]) {
       FILE *wfcount;
       wfcount = fopen(str_map_counte[m].c_str(), "wb");
       if (!wfcount) {
-        cout << "Cannot open file for count-1 in the library directory!"
-             << endl;
+        cout << "Cannot open file for count-1 in the library directory!" << endl;
         exit(1);
       }
-      fwrite(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t),
-             enc_chunk_counts_1[m], wfcount);
+      fwrite(count_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint16_t), enc_chunk_counts_1[m], wfcount);
       fclose(wfcount);
     }
   }
@@ -1328,8 +1272,7 @@ int main(int argc, char *argv[]) {
   delete[] encid_arr;
 
   end = chrono::steady_clock::now();
-  cout << "Done matching for all. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count()
+  cout << "Done matching for all. Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count()
        << " seconds." << endl;
 
   return 0;
@@ -1436,8 +1379,7 @@ vector<string> list_dir(const char *path) {
   DIR *dir = opendir(path);
 
   while ((entry = readdir(dir)) != NULL) {
-    if ((strcmp(entry->d_name, "..") != 0) &&
-        (strcmp(entry->d_name, ".") != 0)) {
+    if ((strcmp(entry->d_name, "..") != 0) && (strcmp(entry->d_name, ".") != 0)) {
       userString.push_back(string(path) + "/" + entry->d_name);
     }
   }
@@ -1446,8 +1388,7 @@ vector<string> list_dir(const char *path) {
   return (userString);
 }
 
-uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts,
-                          vector<int8_t> bits_to_grab) {
+uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts, vector<int8_t> bits_to_grab) {
   uint64_t res = 0;
   int i = 0;
 
@@ -1490,9 +1431,8 @@ uint8_t get_encid(uint64_t sind, uint8_t encid_arr[]) {
   return (encid);
 }
 
-void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
-                    bool &kmer_found, bool &closest_match, bool &exact_match,
-                    uint8_t &num_matched) {
+void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist, bool &kmer_found, bool &closest_match,
+                    bool &exact_match, uint8_t &num_matched) {
   if ((!kmer_found) && (dist <= p)) {
     kmer_found = true;
     num_matched += 1;
@@ -1506,8 +1446,7 @@ void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist,
   exact_match = dist == 0;
 }
 
-void output_reads(ofstream &ofs_reads, string name, string orig_read,
-                  string line_third, string line_fourth) {
+void output_reads(ofstream &ofs_reads, string name, string orig_read, string line_third, string line_fourth) {
   ofs_reads << name << endl;
   ofs_reads << orig_read << endl;
   // Output separator and quality.
@@ -1515,8 +1454,7 @@ void output_reads(ofstream &ofs_reads, string name, string orig_read,
   ofs_reads << line_fourth << endl;
 }
 
-void output_distances(ofstream &ofs_kmer_distances, string name,
-                      map<uint64_t, uint64_t> min_distances,
+void output_distances(ofstream &ofs_kmer_distances, string name, map<uint64_t, uint64_t> min_distances,
                       map<uint64_t, uint64_t> reverse_min_distances) {
   ofs_kmer_distances << name << "\t"
                      << "--";
@@ -1533,25 +1471,20 @@ void output_distances(ofstream &ofs_kmer_distances, string name,
   ofs_kmer_distances << endl;
 }
 
-void output_matches(ofstream &ofs_match_information, string name,
-                    vector<uint16_t> match_cIDs,
-                    vector<uint16_t> match_distances,
-                    vector<uint16_t> rc_match_taxIDs,
-                    vector<uint16_t> rc_match_distances,
-                    map<uint16_t, uint64_t> &cID_to_taxID) {
+void output_matches(ofstream &ofs_match_information, string name, vector<uint16_t> match_cIDs,
+                    vector<uint16_t> match_distances, vector<uint16_t> rc_match_taxIDs,
+                    vector<uint16_t> rc_match_distances, map<uint16_t, uint64_t> &cID_to_taxID) {
   ofs_match_information << name << endl;
 
   ofs_match_information << "--";
   for (int i = 0; i < match_cIDs.size(); ++i) {
-    ofs_match_information << " " << cID_to_taxID[match_cIDs[i]] << ":"
-                          << match_distances[i];
+    ofs_match_information << " " << cID_to_taxID[match_cIDs[i]] << ":" << match_distances[i];
   }
   ofs_match_information << endl;
 
   ofs_match_information << "rc";
   for (int i = 0; i < rc_match_taxIDs.size(); ++i) {
-    ofs_match_information << " " << cID_to_taxID[rc_match_taxIDs[i]] << ":"
-                          << rc_match_distances[i];
+    ofs_match_information << " " << cID_to_taxID[rc_match_taxIDs[i]] << ":" << rc_match_distances[i];
   }
   ofs_match_information << endl;
 }
@@ -1564,8 +1497,7 @@ map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance) {
   return distances;
 }
 
-void read_filename_map(string filename,
-                       map<string, uint64_t> &filename_to_taxID) {
+void read_filename_map(string filename, map<string, uint64_t> &filename_to_taxID) {
   ifstream fmap;
   fmap.open(filename);
   if (!fmap) {
@@ -1580,8 +1512,7 @@ void read_filename_map(string filename,
   fmap.close();
 }
 
-uint16_t getLCA(uint16_t cID_0, uint16_t cID_1,
-                unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup) {
+uint16_t getLCA(uint16_t cID_0, uint16_t cID_1, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup) {
   vector<uint16_t> p_curr = taxonomy_lookup[cID_0];
   vector<uint16_t> p_new = taxonomy_lookup[cID_1];
   uint16_t cID = 1;
@@ -1604,81 +1535,65 @@ uint16_t getLCA(uint16_t cID_0, uint16_t cID_1,
   return cID;
 }
 
-void update_kmer_cID(
-    uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_arr_0[],
-    uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1,
-    uint8_t encid, uint32_t encoding_ix, uint16_t filename_cID,
-    unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup) {
+void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_arr_0[],
+                     uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1, uint8_t encid,
+                     uint32_t encoding_ix, uint16_t filename_cID,
+                     unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup) {
   float p_update;
   float w = 5.0;
   float s = 4.0;
   random_device device;
   mt19937 gen(device());
-#pragma omp critical
-  {
-    if (encid == 0) {
-      if (!seen_0[encoding_ix]) {
-        seen_0[encoding_ix] = true;
-        p_update =
-            min(1.0, pow(1.0 / w, 2) +
-                         (s / max(s, s + (float)count_arr_0[encoding_ix] - w)));
-        bernoulli_distribution btrial(p_update);
-        bool update = btrial(gen);
-        if (update) {
-          if (cID_arr_0[encoding_ix] == 0) {
-            cID_arr_0[encoding_ix] = filename_cID;
-          } else if (cID_arr_0[encoding_ix] == 1) {
-          } else {
-            cID_arr_0[encoding_ix] =
-                getLCA(cID_arr_0[encoding_ix], filename_cID, taxonomy_lookup);
-          }
+  if (encid == 0) {
+    if (!seen_0[encoding_ix]) {
+      seen_0[encoding_ix] = true;
+      p_update = min(1.0, pow(1.0 / w, 2) + (s / max(s, s + (float)count_arr_0[encoding_ix] - w)));
+      bernoulli_distribution btrial(p_update);
+      bool update = btrial(gen);
+      if (update) {
+        if (cID_arr_0[encoding_ix] == 0) {
+          cID_arr_0[encoding_ix] = filename_cID;
+        } else if (cID_arr_0[encoding_ix] == 1) {
+        } else {
+          cID_arr_0[encoding_ix] = getLCA(cID_arr_0[encoding_ix], filename_cID, taxonomy_lookup);
         }
       }
-    } else {
-      if (!seen_1[encoding_ix]) {
-        seen_1[encoding_ix] = true;
-        p_update =
-            min(1.0, pow(1.0 / w, 2) +
-                         (s / max(s, s + (float)count_arr_1[encoding_ix] - w)));
-        bernoulli_distribution btrial(p_update);
-        bool update = btrial(gen);
-        if (update) {
-          if (cID_arr_1[encoding_ix] == 0) {
-            cID_arr_1[encoding_ix] = filename_cID;
-          } else if (cID_arr_1[encoding_ix] == 1) {
-          } else {
-            cID_arr_1[encoding_ix] =
-                getLCA(cID_arr_1[encoding_ix], filename_cID, taxonomy_lookup);
-          }
+    }
+  } else {
+    if (!seen_1[encoding_ix]) {
+      seen_1[encoding_ix] = true;
+      p_update = min(1.0, pow(1.0 / w, 2) + (s / max(s, s + (float)count_arr_1[encoding_ix] - w)));
+      bernoulli_distribution btrial(p_update);
+      bool update = btrial(gen);
+      if (update) {
+        if (cID_arr_1[encoding_ix] == 0) {
+          cID_arr_1[encoding_ix] = filename_cID;
+        } else if (cID_arr_1[encoding_ix] == 1) {
+        } else {
+          cID_arr_1[encoding_ix] = getLCA(cID_arr_1[encoding_ix], filename_cID, taxonomy_lookup);
         }
       }
     }
   }
 }
 
-void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[],
-                       vector<bool> &seen_0, vector<bool> &seen_1,
-                       uint8_t encid, uint32_t encoding_ix) {
-#pragma omp critical
-  {
-    if (encid == 0) {
-      if (!seen_0[encoding_ix]) {
-        count_arr_0[encoding_ix]++;
-        seen_0[encoding_ix] = true;
-      }
-    } else {
-      if (!seen_1[encoding_ix]) {
-        count_arr_1[encoding_ix]++;
-        seen_1[encoding_ix] = true;
-      }
+void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0,
+                       vector<bool> &seen_1, uint8_t encid, uint32_t encoding_ix) {
+  if (encid == 0) {
+    if (!seen_0[encoding_ix]) {
+      count_arr_0[encoding_ix]++;
+      seen_0[encoding_ix] = true;
+    }
+  } else {
+    if (!seen_1[encoding_ix]) {
+      count_arr_1[encoding_ix]++;
+      seen_1[encoding_ix] = true;
     }
   }
 }
 
-void read_taxonomy_lookup(
-    string filepath, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup,
-    map<uint64_t, uint16_t> &taxID_to_cID,
-    map<uint16_t, uint64_t> &cID_to_taxID) {
+void read_taxonomy_lookup(string filepath, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup,
+                          map<uint64_t, uint16_t> &taxID_to_cID, map<uint16_t, uint64_t> &cID_to_taxID) {
   ifstream ftable;
   ftable.open(filepath);
   if (!ftable) {
