@@ -58,8 +58,7 @@ vector<string> list_dir(const char *path) {
   return (userString);
 }
 
-void read_taxonomy_lookup(string filepath,
-                          unordered_map<uint64_t, vector<uint64_t>> &taxonomy_lookup) {
+void read_taxonomy_lookup(string filepath, unordered_map<uint64_t, vector<uint64_t>> &taxonomy_lookup) {
   ifstream ftable;
   ftable.open(filepath);
   if (!ftable) {
@@ -134,8 +133,8 @@ void read_matches(string filepath, vector<read_info> &all_read_info) {
   }
 }
 
-unordered_map<uint64_t, float>
-get_level_votes(kmer_match amatch, unordered_map<uint64_t, vector<uint64_t>> &taxonomy_lookup) {
+unordered_map<uint64_t, float> get_level_votes(kmer_match amatch,
+                                               unordered_map<uint64_t, vector<uint64_t>> &taxonomy_lookup) {
   uint16_t k = KMER_LENGTH;
   unordered_map<uint64_t, float> match_votes;
   for (uint64_t a_taxID : taxonomy_lookup[amatch.taxID]) {
@@ -147,8 +146,7 @@ get_level_votes(kmer_match amatch, unordered_map<uint64_t, vector<uint64_t>> &ta
 
 void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup,
                      vector<read_info> &all_read_info, int thread_count) {
-#pragma omp parallel for schedule(dynamic, 1) num_threads(thread_count)                           \
-    shared(taxonomy_lookup, all_read_info)
+#pragma omp parallel for schedule(dynamic, 1) num_threads(thread_count) shared(taxonomy_lookup, all_read_info)
   for (int ix = 0; ix < all_read_info.size(); ++ix) {
     read_info &curr_read = all_read_info[ix];
     uint64_t rootID = 1;
@@ -173,8 +171,7 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup,
       vector<uint64_t> taxIDs_vec(all_taxIDs.begin(), all_taxIDs.end());
 
       for (uint64_t taxID : taxIDs_vec) {
-        final_votes[taxID] =
-            accumulate(vote_collector[taxID].begin(), vote_collector[taxID].end(), 0.0);
+        final_votes[taxID] = accumulate(vote_collector[taxID].begin(), vote_collector[taxID].end(), 0.0);
       }
 
       for (const auto &taxon : TaxonomicInfo::AllKingdoms) {
@@ -204,14 +201,22 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup,
 void write_predictions_to_file(string filepath, vector<read_info> all_read_info) {
   ofstream outfile(filepath);
   string read_form;
-  for (auto &curr_read : all_read_info) {
-    if (curr_read.isRC) {
+  int num_reads = all_read_info.size() / 2;
+  for (int ix = 0; ix < num_reads; ++ix) {
+    float rc_vote = get<1>(all_read_info[2 * ix + 1].pred_taxID_info);
+    float os_vote = get<1>(all_read_info[2 * ix].pred_taxID_info);
+
+    read_info curr_read;
+
+    if (rc_vote > os_vote) {
       read_form = "rc";
+      curr_read = all_read_info[2 * ix + 1];
     } else {
       read_form = "--";
+      curr_read = all_read_info[2 * ix];
     }
-    outfile << curr_read.readID << "\t" << read_form << "\t"
-            << to_string(get<0>(curr_read.pred_taxID_info)) << "\t"
+    outfile << curr_read.readID << "\t" << read_form << "\t" << to_string(get<0>(curr_read.pred_taxID_info))
+            << "\t"
             << "\t" << to_string(get<1>(curr_read.pred_taxID_info)) << "\t"
             << to_string(get<2>(curr_read.pred_taxID_info)) << endl;
   }
