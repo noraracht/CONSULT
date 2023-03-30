@@ -1,4 +1,4 @@
-all: clean compile minimize map search init-ID update-ID save-matches classify
+all: clean compile minimize map search init-ID update-ID save-matches classify profile
 
 clean:
 	@make clean -C ..
@@ -8,7 +8,14 @@ clean:
 	[ ! -e unclassified-seq_query000      ] || rm unclassified-seq_query000
 	[ ! -e kmer-distances_query000        ] || rm kmer-distances_query000
 	[ ! -e match-info_query000            ] || rm match-info_query000
-	[ ! -e predictions_query000           ] || rm predictions_query000
+	[ ! -e classification_query000        ] || rm classification_query000
+	[ ! -e profile_query000-species       ] || rm profile_query000-species
+	[ ! -e profile_query000-genus         ] || rm profile_query000-genus
+	[ ! -e profile_query000-family        ] || rm profile_query000-family
+	[ ! -e profile_query000-order         ] || rm profile_query000-order
+	[ ! -e profile_query000-class         ] || rm profile_query000-class
+	[ ! -e profile_query000-phylum        ] || rm profile_query000-phylum
+	[ ! -e profile_query000-kingdom       ] || rm profile_query000-kingdom
 
 compile:
 	@echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
@@ -18,6 +25,7 @@ compile:
 	@make map -C ..
 	@make search -C ..
 	@make classify -C ..
+	@make profile -C ..
 
 minimize:
 	@echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
@@ -83,6 +91,16 @@ classify:
 	@echo "===CLASSIFICATION==="
 	@echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
 	@../consult_classify \
+		-i "match-info_query000" \
+		-o "." \
+		--taxonomy-lookup-path "taxonomy-lookup" \
+		--thread-count 12
+
+profile:
+	@echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+	@echo "===PROFILING==="
+	@echo -e "\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+	@../consult_profile \
 		-i "match-info_query000" \
 		-o "." \
 		--taxonomy-lookup-path "taxonomy-lookup" \

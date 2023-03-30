@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <chrono>
 #include <dirent.h>
 #include <fstream>
@@ -28,6 +29,10 @@ enum rank { KINGDOM = 1, PHYLUM = 2, CLASS = 3, ORDER = 4, FAMILY = 5, GENUS = 6
 enum Kingdoms { BACTERIA = 2, ARCHAEA = 2157 };
 
 static const Kingdoms AllKingdoms[] = {BACTERIA, ARCHAEA};
+
+unordered_map<int, string> mapRankName = {{1, "kingdom"}, {2, "phylum"}, {3, "class"},  {4, "order"},
+                                          {5, "family"},  {6, "genus"},  {7, "species"}};
+
 } // namespace TaxonomicInfo
 
 struct kmer_match {
@@ -39,7 +44,6 @@ struct kmer_match {
 struct read_info {
   bool isRC;
   string readID;
-  tuple<uint64_t, float, float> pred_taxID_info;
   vector<kmer_match> match_vector;
 };
 
@@ -145,84 +149,95 @@ unordered_map<uint64_t, float> get_rank_votes(kmer_match amatch,
 }
 
 void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup,
-                     vector<read_info> &all_read_info, int thread_count) {
+                     vector<read_info> &all_read_info,
+                     unordered_map<uint16_t, unordered_map<uint64_t, float>> &profile_by_rank,
+                     int thread_count) {
+  int num_reads = all_read_info.size() / 2;
 #pragma omp parallel for schedule(dynamic, 1) num_threads(thread_count) shared(taxonomy_lookup, all_read_info)
-  for (int ix = 0; ix < all_read_info.size(); ++ix) {
-    read_info &curr_read = all_read_info[ix];
-    uint64_t rootID = 1;
-    pair<uint64_t, float> identity(rootID, 0.0);
-    pair<uint64_t, float> maxID(0, 0.0);
-    float max_vote = 0.0;
-    if (curr_read.match_vector.size() > 0) {
-      unordered_map<uint64_t, vector<float>> vote_collector;
-      unordered_map<uint64_t, float> final_votes;
-      unordered_set<uint64_t> all_taxIDs;
-      unordered_map<uint16_t, unordered_set<uint64_t>> taxIDs_by_rank;
+  for (int rix = 0; rix < num_reads; ++rix) {
+    float prev_max_vote = 0.0;
+    unordered_map<uint64_t, float> prev_final_votes;
+    for (int cx = 0; cx < 2; ++cx) {
+      int ix = rix * 2 + cx;
+      read_info &curr_read = all_read_info[ix];
+      uint64_t rootID = 1;
+      pair<uint64_t, float> identity(rootID, 0.0);
+      float curr_max_vote = 0.0;
+      if (curr_read.match_vector.size() > 0) {
+        unordered_map<uint64_t, vector<float>> vote_collector;
+        unordered_map<uint64_t, float> curr_final_votes;
+        unordered_set<uint64_t> all_taxIDs;
+        unordered_map<uint16_t, unordered_set<uint64_t>> taxIDs_by_rank;
 
-      for (auto &curr_match : curr_read.match_vector) {
-        unordered_map<uint64_t, float> match_votes;
+        for (auto &curr_match : curr_read.match_vector) {
+          unordered_map<uint64_t, float> match_votes;
 #pragma omp critical
-        { match_votes = get_rank_votes(curr_match, taxonomy_lookup); }
-        for (auto &vote : match_votes) {
-          vote_collector[vote.first].push_back(vote.second);
-          all_taxIDs.insert(vote.first);
+          { match_votes = get_rank_votes(curr_match, taxonomy_lookup); }
+          for (auto &vote : match_votes) {
+            vote_collector[vote.first].push_back(vote.second);
+            all_taxIDs.insert(vote.first);
 #pragma omp critical
-          { taxIDs_by_rank[(int)taxonomy_lookup[vote.first].size()].insert(vote.first); }
-        }
-      }
-
-      vector<uint64_t> taxIDs_vec(all_taxIDs.begin(), all_taxIDs.end());
-
-      for (uint64_t taxID : taxIDs_vec) {
-        final_votes[taxID] = accumulate(vote_collector[taxID].begin(), vote_collector[taxID].end(), 0.0);
-      }
-
-      for (const auto &taxon : TaxonomicInfo::AllKingdoms) {
-        max_vote += final_votes[static_cast<int>(taxon)];
-      }
-      float th_vote = 0.5 * max_vote;
-
-      for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
-        vector<uint64_t> taxIDs_vec_lvl(taxIDs_by_rank[lvl].begin(), taxIDs_by_rank[lvl].end());
-        for (auto &taxID : taxIDs_vec_lvl) {
-          if (final_votes[taxID] > th_vote) {
-            maxID.first = taxID;
-            maxID.second = final_votes[taxID];
-            break;
+            { taxIDs_by_rank[(int)taxonomy_lookup[vote.first].size()].insert(vote.first); }
           }
         }
-        if (maxID.second > th_vote)
-          break;
+
+        vector<uint64_t> taxIDs_vec(all_taxIDs.begin(), all_taxIDs.end());
+
+        for (uint64_t taxID : taxIDs_vec) {
+          curr_final_votes[taxID] =
+              accumulate(vote_collector[taxID].begin(), vote_collector[taxID].end(), 0.0);
+        }
+        for (const auto &taxon : TaxonomicInfo::AllKingdoms) {
+          curr_max_vote += curr_final_votes[static_cast<int>(taxon)];
+        }
+
+        if (ix % 2 == 1) {
+          for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
+            vector<uint64_t> taxIDs_vec_lvl(taxIDs_by_rank[lvl].begin(), taxIDs_by_rank[lvl].end());
+            for (auto &taxID : taxIDs_vec_lvl) {
+              if (curr_max_vote > prev_max_vote) {
+#pragma omp atomic
+                profile_by_rank[lvl][taxID] += curr_final_votes[taxID];
+              } else {
+#pragma omp atomic
+                profile_by_rank[lvl][taxID] += prev_final_votes[taxID];
+              }
+            }
+          }
+        } else {
+          prev_max_vote = curr_max_vote;
+          prev_final_votes = curr_final_votes;
+        }
       }
     }
-    get<0>(curr_read.pred_taxID_info) = maxID.first;
-    get<1>(curr_read.pred_taxID_info) = maxID.second;
-    get<2>(curr_read.pred_taxID_info) = max_vote;
   }
 }
 
-void write_classifications_to_file(string filepath, vector<read_info> all_read_info) {
-  ofstream outfile(filepath);
-  string read_form;
-  int num_reads = all_read_info.size() / 2;
-  for (int ix = 0; ix < num_reads; ++ix) {
-    float rc_vote = get<1>(all_read_info[2 * ix + 1].pred_taxID_info);
-    float os_vote = get<1>(all_read_info[2 * ix].pred_taxID_info);
-
-    read_info curr_read;
-
-    if (rc_vote > os_vote) {
-      read_form = "rc";
-      curr_read = all_read_info[2 * ix + 1];
-    } else {
-      read_form = "--";
-      curr_read = all_read_info[2 * ix];
+void compute_profile(unordered_map<uint16_t, unordered_map<uint64_t, float>> &profile_by_rank,
+                     int thread_count) {
+#pragma omp parallel for num_threads(min(thread_count, (int)TaxonomicInfo::num_ranks))
+  for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
+    float total_rank_nvote = 0.0;
+    for (auto &kv : profile_by_rank[lvl]) {
+      total_rank_nvote += sqrt(kv.second);
     }
-    outfile << curr_read.readID << "\t" << read_form << "\t" << to_string(get<0>(curr_read.pred_taxID_info))
-            << "\t" << to_string(get<1>(curr_read.pred_taxID_info)) << "\t"
-            << to_string(get<2>(curr_read.pred_taxID_info)) << endl;
+    for (auto &kv : profile_by_rank[lvl]) {
+      profile_by_rank[lvl][kv.first] = sqrt(kv.second) / total_rank_nvote;
+    }
   }
-  outfile.close();
+}
+
+void write_profile_to_file(string filepath, string taxonomy_lvl, unordered_map<uint64_t, float> &profile) {
+  filepath = filepath + "-" + taxonomy_lvl;
+  ofstream outfile(filepath);
+  outfile << "TAXONOMY_ID"
+          << "\t"
+          << "TAXONOMY_LEVEL"
+          << "\t"
+          << "FRACTION_TOTAL" << endl;
+  for (auto &kv : profile) {
+    outfile << kv.first << "\t" << taxonomy_lvl << "\t" << to_string(kv.second) << endl;
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -297,9 +312,9 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  int total_readTime = 0;
-  int total_classificationTime = 0;
   int total_numberOfReads = 0;
+  int total_readTime = 0;
+  int total_profilingTime = 0;
 
   chrono::steady_clock::time_point t1;
   chrono::steady_clock::time_point t2;
@@ -308,7 +323,7 @@ int main(int argc, char *argv[]) {
     string query_name = input_path.substr(input_path.find_last_of("/") + 1);
     query_name = query_name.substr(0, query_name.find_last_of("."));
     query_name = query_name.substr(query_name.find_first_of("_") + 1);
-    string output_path = output_predictions_dir + "/" + "classification_" + query_name;
+    string output_path = output_predictions_dir + "/" + "profile_" + query_name;
     cout << "Now processing: " << query_name << endl;
 
     unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup;
@@ -318,18 +333,23 @@ int main(int argc, char *argv[]) {
     t1 = chrono::steady_clock::now();
     read_matches(input_path, all_read_info);
     t2 = chrono::steady_clock::now();
-    total_readTime += chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
+    total_readTime += chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
     total_numberOfReads += all_read_info.size();
 
+    unordered_map<uint16_t, unordered_map<uint64_t, float>> profile_by_rank;
     t1 = chrono::steady_clock::now();
-    aggregate_votes(taxonomy_lookup, all_read_info, thread_count);
+    aggregate_votes(taxonomy_lookup, all_read_info, profile_by_rank, thread_count);
+    compute_profile(profile_by_rank, thread_count);
     t2 = chrono::steady_clock::now();
-    total_classificationTime += chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
-    write_classifications_to_file(output_path, all_read_info);
+    total_profilingTime += chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+
+    for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
+      write_profile_to_file(output_path, TaxonomicInfo::mapRankName[lvl], profile_by_rank[lvl]);
+    }
   }
   cout << "Time past (read_matches) = " << total_readTime << "[ms]" << endl;
-  cout << "Time past (aggregate_votes) = " << total_classificationTime << "[ms]" << endl;
+  cout << "Time past (aggregate_votes + compute_profile) = " << total_profilingTime << "[ms]" << endl;
   cout << "Total number of reads processed: " << total_numberOfReads / 2 << endl;
 }
