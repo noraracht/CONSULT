@@ -70,7 +70,7 @@ void output_reads(ofstream &ofs_reads, string name, string orig_read, string lin
 void output_distances(ofstream &ofs_kmer_distances, string name, map<uint64_t, uint64_t> min_distances,
                       map<uint64_t, uint64_t> reverse_min_distances);
 void output_matches(ofstream &ofs_match_information, string name, vector<uint16_t> match_cIDs,
-                    vector<uint16_t> match_distances, vector<uint16_t> rc_match_taxIDs,
+                    vector<uint16_t> match_distances, vector<uint16_t> rc_match_cIDs,
                     vector<uint16_t> rc_match_distances, map<uint16_t, uint64_t> &cID_to_taxID);
 
 void read_filename_map(string filename, map<string, uint64_t> &filename_to_taxID);
@@ -291,22 +291,19 @@ int main(int argc, char *argv[]) {
     cout << "Maximum distance to save is " << maximum_distance << "." << endl;
   }
 
-  cout << endl
-       << "k-mer statistics:" << endl;
+  cout << endl << "k-mer statistics:" << endl;
   cout << "-----------------" << endl;
   cout << "k-mer count = " << kmer_count << endl;
   cout << "k-mer count array-0 = " << encli_0 << endl;
   cout << "k-mer count array-1 = " << encli_1 << endl;
-  cout << "-----------------" << endl
-       << endl;
+  cout << "-----------------" << endl << endl;
 
   cout << "Library size information:" << endl;
   cout << "-------------------------" << endl;
   cout << "Tag array size  = " << new_tag_arr_size << endl;
   cout << "Signature array size = " << sigs_arr_size << endl;
   cout << "Encoding ID array size  = " << encid_arr_size << endl;
-  cout << "-------------------------" << endl
-       << endl;
+  cout << "-------------------------" << endl << endl;
 
   int vec_size = 0;
   vector<vector<int8_t>> shifts;
@@ -363,8 +360,7 @@ int main(int argc, char *argv[]) {
   cout << "Tag size in bits = " << t << endl;
   cout << "Tag mask = " << tag_mask << endl;
   cout << "Big sig mask = " << big_sig_mask << endl;
-  cout << "--------------------" << endl
-       << endl;
+  cout << "--------------------" << endl << endl;
 
   // Read file chunk information.
   uint8_t sigf_chunks;
@@ -512,8 +508,7 @@ int main(int argc, char *argv[]) {
     cerr << "Failed to allocate memory for encodings." << ba.what() << endl;
   }
 
-  cout << "Memory allocation is completed." << endl
-       << endl;
+  cout << "Memory allocation is completed." << endl << endl;
 
   struct stat s_query_path;
   vector<string> query_file_list;
@@ -802,8 +797,7 @@ int main(int argc, char *argv[]) {
   cout << "Encoding IDs read: " << total_encid_read << endl;
   cout << "Encodings read to array-0 : " << num_pairs_0 << endl;
   cout << "Encodings read to array-1 : " << num_pairs_1 << endl;
-  cout << "-------------------" << endl
-       << endl;
+  cout << "-------------------" << endl << endl;
 
   auto end = chrono::steady_clock::now();
   cout << "Done reading. Now matching. Time so far: "
@@ -924,7 +918,7 @@ int main(int argc, char *argv[]) {
         vector<uint16_t> match_distances;
         vector<uint16_t> match_cIDs;
         vector<uint16_t> rc_match_distances;
-        vector<uint16_t> rc_match_taxIDs;
+        vector<uint16_t> rc_match_cIDs;
 
         string orig_read = curr_read;
         istringstream iss(curr_read);
@@ -955,7 +949,7 @@ int main(int argc, char *argv[]) {
               uint8_t min_dist = KMER_LENGTH;
               uint16_t kmer_ID;
 
-              for (int64_t funci = 0; funci < l; funci++) {
+              for (uint64_t funci = 0; funci < l; funci++) {
                 kmer_sig = encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
 
                 tag = (kmer_sig >> ((2 * h) - t)) & tag_mask;
@@ -994,9 +988,7 @@ int main(int argc, char *argv[]) {
                     }
                     if (init_ID && exact_match) {
 #pragma omp critical
-                      {
-                        update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, encid, encoding_ix);
-                      }
+                      { update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, encid, encoding_ix); }
                     }
                     if (closest_match && save_matches) {
                       if (encid == 0) {
@@ -1039,7 +1031,7 @@ int main(int argc, char *argv[]) {
         }
 
         // Try reverse complement.
-        if ((num_matched < c) || save_distances || save_matches) {
+        if (init_ID || update_ID || save_distances || save_matches || (num_matched < c)) {
           int len = strlen(curr_read.c_str());
           char swap;
 
@@ -1096,6 +1088,7 @@ int main(int argc, char *argv[]) {
                       encid = get_encid(b * f_tmp + b * s_tmp + enc, encid_arr);
 
                       uint32_t encoding_ix = sigs_arr[f_tmp * b + s_tmp * b + enc];
+
                       if (encid == 0) {
                         test_enc = encode_arr_0[encoding_ix];
                       } else {
@@ -1109,15 +1102,13 @@ int main(int argc, char *argv[]) {
                       if (update_ID && exact_match) {
 #pragma omp critical
                         {
-                          update_kmer_cID(cID_arr_0, cID_arr_1, count_arr_0, count_arr_1, seen_0, seen_1, encid,
-                                          encoding_ix, filename_cID, taxonomy_lookup);
+                          update_kmer_cID(cID_arr_0, cID_arr_1, count_arr_0, count_arr_1, seen_0, seen_1,
+                                          encid, encoding_ix, filename_cID, taxonomy_lookup);
                         }
                       }
                       if (init_ID && exact_match) {
 #pragma omp critical
-                        {
-                          update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, encid, encoding_ix);
-                        }
+                        { update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, encid, encoding_ix); }
                       }
                       if (closest_match && save_matches) {
                         if (encid == 0) {
@@ -1147,7 +1138,7 @@ int main(int argc, char *argv[]) {
                   if (save_distances)
                     reverse_min_distances[min_dist]++;
                   if (save_matches) {
-                    rc_match_taxIDs.push_back(kmer_ID);
+                    rc_match_cIDs.push_back(kmer_ID);
                     rc_match_distances.push_back(min_dist);
                   }
                 }
@@ -1172,7 +1163,7 @@ int main(int argc, char *argv[]) {
 #pragma omp critical
 #endif
           {
-            output_matches(ofs_match_information, name, match_cIDs, match_distances, rc_match_taxIDs,
+            output_matches(ofs_match_information, name, match_cIDs, match_distances, rc_match_cIDs,
                            rc_match_distances, cID_to_taxID);
           }
         }
@@ -1394,10 +1385,7 @@ uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts, vector<int8_t> bi
 
   while (shifts[i] != -1) {
     val = val << shifts[i];
-    asm("shld %b3, %2, %0"
-        : "=rm"(res)
-        : "0"(res), "r"(val), "ic"(bits_to_grab[i])
-        : "cc");
+    asm("shld %b3, %2, %0" : "=rm"(res) : "0"(res), "r"(val), "ic"(bits_to_grab[i]) : "cc");
 
     i++;
   }
@@ -1472,7 +1460,7 @@ void output_distances(ofstream &ofs_kmer_distances, string name, map<uint64_t, u
 }
 
 void output_matches(ofstream &ofs_match_information, string name, vector<uint16_t> match_cIDs,
-                    vector<uint16_t> match_distances, vector<uint16_t> rc_match_taxIDs,
+                    vector<uint16_t> match_distances, vector<uint16_t> rc_match_cIDs,
                     vector<uint16_t> rc_match_distances, map<uint16_t, uint64_t> &cID_to_taxID) {
   ofs_match_information << name << endl;
 
@@ -1483,8 +1471,8 @@ void output_matches(ofstream &ofs_match_information, string name, vector<uint16_
   ofs_match_information << endl;
 
   ofs_match_information << "rc";
-  for (int i = 0; i < rc_match_taxIDs.size(); ++i) {
-    ofs_match_information << " " << cID_to_taxID[rc_match_taxIDs[i]] << ":" << rc_match_distances[i];
+  for (int i = 0; i < rc_match_cIDs.size(); ++i) {
+    ofs_match_information << " " << cID_to_taxID[rc_match_cIDs[i]] << ":" << rc_match_distances[i];
   }
   ofs_match_information << endl;
 }
@@ -1515,16 +1503,17 @@ void read_filename_map(string filename, map<string, uint64_t> &filename_to_taxID
 uint16_t getLCA(uint16_t cID_0, uint16_t cID_1, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup) {
   vector<uint16_t> p_curr = taxonomy_lookup[cID_0];
   vector<uint16_t> p_new = taxonomy_lookup[cID_1];
+  int rank_diff = p_new.size() - p_curr.size();
   uint16_t cID = 1;
   for (int i = 0; i < p_curr.size(); ++i) {
-    if ((p_new[i + p_new.size() - p_curr.size()] != 0) && (p_curr[i] != 0)) {
-      if (p_curr[i] == p_new[i + p_new.size() - p_curr.size()]) {
+    if ((p_new[i + rank_diff] != 0) && (p_curr[i] != 0)) {
+      if (p_curr[i] == p_new[i + rank_diff]) {
         cID = p_curr[i];
         break;
       }
     } else {
-      if (p_new[i + p_new.size() - p_curr.size()] != 0) {
-        cID = p_new[i + p_new.size() - p_curr.size()];
+      if (p_new[i + rank_diff] != 0) {
+        cID = p_new[i + rank_diff];
         break;
       } else if (p_curr[i] != 0) {
         cID = p_curr[i];
@@ -1532,6 +1521,7 @@ uint16_t getLCA(uint16_t cID_0, uint16_t cID_1, unordered_map<uint16_t, vector<u
       }
     }
   }
+  assert(cID != 0);
   return cID;
 }
 
@@ -1631,9 +1621,9 @@ void read_taxonomy_lookup(string filepath, unordered_map<uint16_t, vector<uint16
 
   sort(taxID_vec.begin(), taxID_vec.end());
 
-  for (uint16_t i = 0; i < taxID_vec.size(); ++i) {
-    taxID_to_cID[taxID_vec[i]] = i + 2;
-    cID_to_taxID[i + 2] = taxID_vec[i];
+  for (uint16_t i = 2; i < taxID_vec.size() + 2; ++i) {
+    taxID_to_cID[taxID_vec[i]] = i;
+    cID_to_taxID[i] = taxID_vec[i];
   }
 
   for (const auto &kv : taxID_lookup) {
