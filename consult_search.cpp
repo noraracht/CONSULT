@@ -2,7 +2,6 @@
 #include <bits/getopt_core.h>
 #include <bits/stdint-intn.h>
 #include <bits/stdint-uintn.h>
-#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -33,6 +32,7 @@
 
 #define KMER_LENGTH 32
 #define TAX_ID_LIMIT 65534
+#define EXPECTED_READ_LEN 150
 
 #define SAVE_DISTANCES_OPT 'd'
 #define MAXIMUM_DISTANCE_OPT 'D'
@@ -44,9 +44,6 @@
 #define UPDATE_ID_OPT 'U'
 #define TAXONOMY_LOOKUP_PATH_OPT 'A'
 #define FILENAME_MAP_PATH_OPT 'F'
-
-#define READ_PARALLELISM
-/* #define FILE_PARALLELISM */
 
 using namespace std;
 
@@ -62,9 +59,6 @@ void encode_kmer_reverse(const char s[], uint64_t &b_enc, uint64_t &b_sig);
 
 void update_kmer(const char *s, uint64_t &b_enc, uint64_t &b_sig);
 void update_kmer_reverse(const char *s, uint64_t &b_enc, uint64_t &b_sig);
-
-void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist, bool &kmer_found, bool &closest_match,
-                    bool &exact_match, uint8_t &num_matched);
 
 void output_reads(ofstream &ofs_reads, string name, string orig_read, string line_third, string line_fourth);
 void output_distances(ofstream &ofs_kmer_distances, string name, map<uint64_t, uint64_t> min_distances,
@@ -87,8 +81,6 @@ void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bo
 map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance);
 
 int main(int argc, char *argv[]) {
-  /* omp_set_nested(1); // Enable nested parallelism */
-  /* omp_set_max_active_levels(2); */
   auto start = chrono::steady_clock::now();
 
   string input_library_dir = string();
@@ -275,7 +267,6 @@ int main(int argc, char *argv[]) {
   if (!given_maximum_distance) {
     maximum_distance = ceil(3 * p / 2) + 1;
   }
-  assert(maximum_distance >= 0);
 
   cout << "Parameter configuration:" << endl;
   cout << "------------------------" << endl;
@@ -287,7 +278,7 @@ int main(int argc, char *argv[]) {
   cout << "------------------------" << endl;
   cout << endl;
 
-  if (save_distances) {
+  if (save_distances || save_matches) {
     cout << "Maximum distance to save is " << maximum_distance << "." << endl;
   }
 
@@ -805,19 +796,11 @@ int main(int argc, char *argv[]) {
 
   int counter_files = 1;
 
-#ifdef FILE_PARALLELISM
-#pragma omp parallel for schedule(dynamic) num_threads(thread_count)
-#endif
   for (int fc_ix = 0; fc_ix < query_file_list.size(); ++fc_ix) {
     string query_file_path;
-#ifdef FILE_PARALLELISM
-#pragma omp critical
-#endif
-    {
-      query_file_path = query_file_list[fc_ix];
-      cout << counter_files << "/" << query_file_list.size() << endl;
-      counter_files++;
-    }
+    query_file_path = query_file_list[fc_ix];
+    cout << counter_files << "/" << query_file_list.size() << endl;
+    counter_files++;
 
     vector<bool> seen_0;
     vector<bool> seen_1;
@@ -869,15 +852,52 @@ int main(int argc, char *argv[]) {
     uint64_t num_lines_read = 0;
     uint64_t reads_matched = 0;
 
-#ifdef READ_PARALLELISM
-#pragma omp parallel num_threads(thread_count)
-#endif
-    {
-      while (ifs_reads_query) {
-        string name;
-        string curr_read;
-        string line_third;
-        string line_fourth;
+    while (ifs_reads_query) {
+      string tmp_name;
+      string tmp_curr_read;
+      string tmp_line_third;
+      string tmp_line_fourth;
+      vector<string> block_names;
+      vector<string> block_curr_read;
+      vector<string> block_line_third;
+      vector<string> block_line_fourth;
+
+      string tmp;
+      for (int i = 0; i < thread_count; ++i) {
+        getline(ifs_reads_query, tmp_name);
+        getline(ifs_reads_query, tmp_curr_read);
+        getline(ifs_reads_query, tmp_line_third);
+        getline(ifs_reads_query, tmp_line_fourth);
+
+        if (ifs_reads_query.eof())
+          break;
+
+        num_lines_read += 4;
+        bool long_enough = (tmp_curr_read.size() / EXPECTED_READ_LEN) > thread_count;
+
+        if ((init_ID || update_ID) && long_enough) {
+          int inc_size = tmp_curr_read.size() / thread_count;
+          for (size_t i = 0; i < tmp_curr_read.size(); i += inc_size) {
+            block_names.push_back(tmp_name + ":" + to_string((int)i));
+            block_curr_read.push_back(tmp_curr_read.substr(i, inc_size + k - 1));
+            block_line_third.push_back(tmp_line_third);
+            block_line_fourth.push_back(tmp_line_fourth.substr(i, inc_size + k - 1));
+          }
+          break;
+        }
+
+        block_names.push_back(tmp_name);
+        block_curr_read.push_back(tmp_curr_read);
+        block_line_third.push_back(tmp_line_third);
+        block_line_fourth.push_back(tmp_line_fourth);
+      }
+
+#pragma omp parallel for num_threads(thread_count) schedule(static, 1)
+      for (size_t tix = 0; tix < block_names.size(); ++tix) {
+        string name = block_names[tix];
+        string curr_read = block_curr_read[tix];
+        string line_third = block_line_third[tix];
+        string line_fourth = block_line_fourth[tix];
 
         uint64_t b_enc;
         uint64_t b_sig;
@@ -890,24 +910,6 @@ int main(int argc, char *argv[]) {
         uint64_t big_sig_hash;
         uint64_t enc_start;
         uint64_t enc_end;
-
-#ifdef READ_PARALLELISM
-#pragma omp critical
-#endif
-        {
-          getline(ifs_reads_query, name);
-          getline(ifs_reads_query, curr_read);
-          getline(ifs_reads_query, line_third);
-          getline(ifs_reads_query, line_fourth);
-        }
-
-        if (ifs_reads_query.eof())
-          break;
-
-#ifdef READ_PARALLELISM
-#pragma omp atomic
-#endif
-        num_lines_read += 4;
 
         uint8_t num_matched = 0;
         uint8_t num_matched_reverse = 0;
@@ -930,15 +932,13 @@ int main(int argc, char *argv[]) {
             b_sig = 0;
 
             for (uint64_t i = 0; i < token.length(); i++) {
-              string kmer_str;
               if (i == 0) {
-                kmer_str = token.substr(i, int(k));
+                string kmer_str = token.substr(i, int(k));
                 const char *ckmer = kmer_str.c_str();
                 encode_kmer(ckmer, b_enc, b_sig);
                 i = k - 1;
-
               } else {
-                kmer_str = token.substr(i, 1);
+                string kmer_str = token.substr(i, 1);
                 const char *ckmer = kmer_str.c_str();
                 update_kmer(ckmer, b_enc, b_sig);
               }
@@ -947,7 +947,7 @@ int main(int argc, char *argv[]) {
               bool closest_match = false;
               bool exact_match = false;
               uint8_t min_dist = KMER_LENGTH;
-              uint16_t kmer_ID;
+              uint16_t kmer_ID = 0;
 
               for (uint64_t funci = 0; funci < l; funci++) {
                 kmer_sig = encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
@@ -970,6 +970,7 @@ int main(int argc, char *argv[]) {
                     encid = get_encid(b * f_tmp + b * s_tmp + enc, encid_arr);
 
                     uint32_t encoding_ix = sigs_arr[b * f_tmp + b * s_tmp + enc];
+
                     if (encid == 0) {
                       test_enc = encode_arr_0[encoding_ix];
                     } else {
@@ -977,18 +978,25 @@ int main(int argc, char *argv[]) {
                     }
 
                     uint8_t dist = hd(b_enc, test_enc);
-                    check_distance(dist, p, min_dist, kmer_found, closest_match, exact_match, num_matched);
+
+                    if ((!kmer_found) && (dist <= p)) {
+                      kmer_found = true;
+                      num_matched += 1;
+                    }
+                    if (dist < min_dist) {
+                      min_dist = dist;
+                      closest_match = true;
+                    } else {
+                      closest_match = false;
+                    }
+                    exact_match = dist == 0;
 
                     if (update_ID && exact_match) {
-#pragma omp critical
-                      {
-                        update_kmer_cID(cID_arr_0, cID_arr_1, count_arr_0, count_arr_1, seen_0, seen_1, encid,
-                                        encoding_ix, filename_cID, taxonomy_lookup);
-                      }
+                      update_kmer_cID(cID_arr_0, cID_arr_1, count_arr_0, count_arr_1, seen_0, seen_1, encid,
+                                      encoding_ix, filename_cID, taxonomy_lookup);
                     }
                     if (init_ID && exact_match) {
-#pragma omp critical
-                      { update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, encid, encoding_ix); }
+                      update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, encid, encoding_ix);
                     }
                     if (closest_match && save_matches) {
                       if (encid == 0) {
@@ -998,14 +1006,14 @@ int main(int argc, char *argv[]) {
                       }
                     }
                     // For each signature pointed row.
-                    if ((!init_ID) && (!update_ID) && kmer_found &&
+                    if ((exact_match || (!init_ID && !update_ID)) && kmer_found &&
                         (exact_match || (!save_distances && !save_matches))) {
                       break;
                     }
                   }
                 }
                 // For each OR gate.
-                if ((!init_ID) && (!update_ID) && kmer_found &&
+                if ((exact_match || (!init_ID && !update_ID)) && kmer_found &&
                     (exact_match || (!save_distances && !save_matches))) {
                   break;
                 }
@@ -1049,14 +1057,13 @@ int main(int argc, char *argv[]) {
               b_sig = 0;
 
               for (uint64_t i = 0; i < token.length(); i++) {
-                string kmer_str;
                 if (i == 0) {
-                  kmer_str = token.substr(i, int(k));
+                  string kmer_str = token.substr(i, int(k));
                   const char *ckmer = kmer_str.c_str();
                   encode_kmer_reverse(ckmer, b_enc, b_sig);
                   i = k - 1;
                 } else {
-                  kmer_str = token.substr(i, 1);
+                  string kmer_str = token.substr(i, 1);
                   const char *ckmer = kmer_str.c_str();
                   update_kmer_reverse(ckmer, b_enc, b_sig);
                 }
@@ -1065,7 +1072,7 @@ int main(int argc, char *argv[]) {
                 bool closest_match = false;
                 bool exact_match = false;
                 uint8_t min_dist = KMER_LENGTH;
-                uint16_t kmer_ID;
+                uint16_t kmer_ID = 0;
 
                 for (uint64_t funci = 0; funci < l; funci++) {
                   kmer_sig = encode_kmer_bits(b_sig, shifts[funci], grab_bits[funci]);
@@ -1096,19 +1103,25 @@ int main(int argc, char *argv[]) {
                       }
 
                       uint8_t dist = hd(b_enc, test_enc);
-                      check_distance(dist, p, min_dist, kmer_found, closest_match, exact_match,
-                                     num_matched_reverse);
+
+                      if ((!kmer_found) && (dist <= p)) {
+                        kmer_found = true;
+                        num_matched += 1;
+                      }
+                      if (dist < min_dist) {
+                        min_dist = dist;
+                        closest_match = true;
+                      } else {
+                        closest_match = false;
+                      }
+                      exact_match = dist == 0;
 
                       if (update_ID && exact_match) {
-#pragma omp critical
-                        {
-                          update_kmer_cID(cID_arr_0, cID_arr_1, count_arr_0, count_arr_1, seen_0, seen_1,
-                                          encid, encoding_ix, filename_cID, taxonomy_lookup);
-                        }
+                        update_kmer_cID(cID_arr_0, cID_arr_1, count_arr_0, count_arr_1, seen_0, seen_1, encid,
+                                        encoding_ix, filename_cID, taxonomy_lookup);
                       }
                       if (init_ID && exact_match) {
-#pragma omp critical
-                        { update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, encid, encoding_ix); }
+                        update_kmer_count(count_arr_0, count_arr_1, seen_0, seen_1, encid, encoding_ix);
                       }
                       if (closest_match && save_matches) {
                         if (encid == 0) {
@@ -1118,14 +1131,14 @@ int main(int argc, char *argv[]) {
                         }
                       }
                       // For each signature pointed row.
-                      if ((!init_ID) && (!update_ID) && kmer_found &&
+                      if ((exact_match || (!init_ID && !update_ID)) && kmer_found &&
                           (exact_match || (!save_distances && !save_matches))) {
                         break;
                       }
                     }
                   }
                   // For each OR gate.
-                  if ((!init_ID) && (!update_ID) && kmer_found &&
+                  if ((exact_match || (!init_ID && !update_ID)) && kmer_found &&
                       (exact_match || (!save_distances && !save_matches))) {
                     break;
                   }
@@ -1152,16 +1165,12 @@ int main(int argc, char *argv[]) {
         }
 
         if (save_distances) {
-#ifdef READ_PARALLELISM
 #pragma omp critical
-#endif
           { output_distances(ofs_kmer_distances, name, min_distances, reverse_min_distances); }
         }
 
         if (save_matches) {
-#ifdef READ_PARALLELISM
 #pragma omp critical
-#endif
           {
             output_matches(ofs_match_information, name, match_cIDs, match_distances, rc_match_cIDs,
                            rc_match_distances, cID_to_taxID);
@@ -1170,20 +1179,14 @@ int main(int argc, char *argv[]) {
 
         if ((num_matched < c) && (num_matched_reverse < c)) {
           if (unclassified_out) {
-#ifdef READ_PARALLELISM
 #pragma omp critical
-#endif
             { output_reads(ofs_reads_unclassified, name, orig_read, line_third, line_fourth); }
           }
         } else if ((num_matched >= c) || (num_matched_reverse >= c)) {
-#ifdef READ_PARALLELISM
 #pragma omp atomic
-#endif
           reads_matched += 1;
           if (classified_out) {
-#ifdef READ_PARALLELISM
 #pragma omp critical
-#endif
             { output_reads(ofs_reads_classified, name, orig_read, line_third, line_fourth); }
           }
         }
@@ -1419,21 +1422,6 @@ uint8_t get_encid(uint64_t sind, uint8_t encid_arr[]) {
   return (encid);
 }
 
-void check_distance(uint8_t &dist, uint64_t &p, uint8_t &min_dist, bool &kmer_found, bool &closest_match,
-                    bool &exact_match, uint8_t &num_matched) {
-  if ((!kmer_found) && (dist <= p)) {
-    kmer_found = true;
-    num_matched += 1;
-  }
-  if (dist < min_dist) {
-    min_dist = dist;
-    closest_match = true;
-  } else {
-    closest_match = false;
-  }
-  exact_match = dist == 0;
-}
-
 void output_reads(ofstream &ofs_reads, string name, string orig_read, string line_third, string line_fourth) {
   ofs_reads << name << endl;
   ofs_reads << orig_read << endl;
@@ -1521,7 +1509,6 @@ uint16_t getLCA(uint16_t cID_0, uint16_t cID_1, unordered_map<uint16_t, vector<u
       }
     }
   }
-  assert(cID != 0);
   return cID;
 }
 
@@ -1530,37 +1517,43 @@ void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_
                      uint32_t encoding_ix, uint16_t filename_cID,
                      unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup) {
   float p_update;
-  float w = 5.0;
-  float s = 4.0;
+  float s = 5.0;
+  float w = 4.0;
   random_device device;
   mt19937 gen(device());
   if (encid == 0) {
-    if (!seen_0[encoding_ix]) {
-      seen_0[encoding_ix] = true;
-      p_update = min(1.0, pow(1.0 / w, 2) + (s / max(s, s + (float)count_arr_0[encoding_ix] - w)));
-      bernoulli_distribution btrial(p_update);
-      bool update = btrial(gen);
-      if (update) {
-        if (cID_arr_0[encoding_ix] == 0) {
-          cID_arr_0[encoding_ix] = filename_cID;
-        } else if (cID_arr_0[encoding_ix] == 1) {
-        } else {
-          cID_arr_0[encoding_ix] = getLCA(cID_arr_0[encoding_ix], filename_cID, taxonomy_lookup);
+#pragma omp critical
+    {
+      if (!seen_0[encoding_ix]) {
+        seen_0[encoding_ix] = true;
+        p_update = min(1.0, pow(1.0 / s, 2) + (w / max(w, w + (float)count_arr_0[encoding_ix] - s)));
+        bernoulli_distribution btrial(p_update);
+        bool update = btrial(gen);
+        if (update) {
+          if (cID_arr_0[encoding_ix] == 0) {
+            cID_arr_0[encoding_ix] = filename_cID;
+          } else if (cID_arr_0[encoding_ix] == 1) {
+          } else {
+            cID_arr_0[encoding_ix] = getLCA(cID_arr_0[encoding_ix], filename_cID, taxonomy_lookup);
+          }
         }
       }
     }
   } else {
-    if (!seen_1[encoding_ix]) {
-      seen_1[encoding_ix] = true;
-      p_update = min(1.0, pow(1.0 / w, 2) + (s / max(s, s + (float)count_arr_1[encoding_ix] - w)));
-      bernoulli_distribution btrial(p_update);
-      bool update = btrial(gen);
-      if (update) {
-        if (cID_arr_1[encoding_ix] == 0) {
-          cID_arr_1[encoding_ix] = filename_cID;
-        } else if (cID_arr_1[encoding_ix] == 1) {
-        } else {
-          cID_arr_1[encoding_ix] = getLCA(cID_arr_1[encoding_ix], filename_cID, taxonomy_lookup);
+#pragma omp critical
+    {
+      if (!seen_1[encoding_ix]) {
+        seen_1[encoding_ix] = true;
+        p_update = min(1.0, pow(1.0 / s, 2) + (w / max(w, w + (float)count_arr_1[encoding_ix] - s)));
+        bernoulli_distribution btrial(p_update);
+        bool update = btrial(gen);
+        if (update) {
+          if (cID_arr_1[encoding_ix] == 0) {
+            cID_arr_1[encoding_ix] = filename_cID;
+          } else if (cID_arr_1[encoding_ix] == 1) {
+          } else {
+            cID_arr_1[encoding_ix] = getLCA(cID_arr_1[encoding_ix], filename_cID, taxonomy_lookup);
+          }
         }
       }
     }
@@ -1570,14 +1563,20 @@ void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_
 void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0,
                        vector<bool> &seen_1, uint8_t encid, uint32_t encoding_ix) {
   if (encid == 0) {
-    if (!seen_0[encoding_ix]) {
-      count_arr_0[encoding_ix]++;
-      seen_0[encoding_ix] = true;
+#pragma omp critical
+    {
+      if (!seen_0[encoding_ix]) {
+        count_arr_0[encoding_ix]++;
+        seen_0[encoding_ix] = true;
+      }
     }
   } else {
-    if (!seen_1[encoding_ix]) {
-      count_arr_1[encoding_ix]++;
-      seen_1[encoding_ix] = true;
+#pragma omp critical
+    {
+      if (!seen_1[encoding_ix]) {
+        count_arr_1[encoding_ix]++;
+        seen_1[encoding_ix] = true;
+      }
     }
   }
 }
@@ -1621,9 +1620,9 @@ void read_taxonomy_lookup(string filepath, unordered_map<uint16_t, vector<uint16
 
   sort(taxID_vec.begin(), taxID_vec.end());
 
-  for (uint16_t i = 2; i < taxID_vec.size() + 2; ++i) {
-    taxID_to_cID[taxID_vec[i]] = i;
-    cID_to_taxID[i] = taxID_vec[i];
+  for (uint16_t i = 2; i < (taxID_vec.size() + 2); ++i) {
+    taxID_to_cID[taxID_vec[i - 2]] = i;
+    cID_to_taxID[i] = taxID_vec[i - 2];
   }
 
   for (const auto &kv : taxID_lookup) {

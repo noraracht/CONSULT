@@ -195,12 +195,13 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup,
           for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
             vector<uint64_t> taxIDs_vec_lvl(taxIDs_by_rank[lvl].begin(), taxIDs_by_rank[lvl].end());
             for (auto &taxID : taxIDs_vec_lvl) {
-              if (curr_max_vote > prev_max_vote) {
-#pragma omp atomic
-                profile_by_rank[lvl][taxID] += curr_final_votes[taxID];
-              } else {
-#pragma omp atomic
-                profile_by_rank[lvl][taxID] += prev_final_votes[taxID];
+#pragma omp critical
+              {
+                if (curr_max_vote > prev_max_vote) {
+                  profile_by_rank[lvl][taxID] += curr_final_votes[taxID];
+                } else {
+                  profile_by_rank[lvl][taxID] += prev_final_votes[taxID];
+                }
               }
             }
           }
@@ -215,7 +216,6 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup,
 
 void compute_profile(unordered_map<uint16_t, unordered_map<uint64_t, float>> &profile_by_rank,
                      int thread_count) {
-#pragma omp parallel for num_threads(min(thread_count, (int)TaxonomicInfo::num_ranks))
   for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
     float total_rank_nvote = 0.0;
     for (auto &kv : profile_by_rank[lvl]) {
