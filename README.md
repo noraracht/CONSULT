@@ -11,11 +11,11 @@ The paper where we have described design of the algorithm and software architect
 * Raw data are deposited in https://github.com/noraracht/lsh_raw_data.
 
 * Our custom CONSULT libraries constructed using different genomic reference sets:
-    - [GTDB](https://tera-trees.com/data/consult/v1.0.0/all_nbrhood_kmers_k32_p3l2clmn7_K15-map2-171_gtdb.tar.gz)
-    - [TOL](https://tera-trees.com/data/consult/v1.0.0/all_nbrhood_kmers_k32_p3l2clmn7_K15-map2-171_ToL.tar.gz)
-    - [Bacterial/Archaeal Kraken](https://tera-trees.com/data/consult/v1.0.0/all_nbrhood_kmers_k32_p3l2clmn7_K15-map2-171_kraken.tar.gz)
-    - [Mitochondrial CONSULT database](https://tera-trees.com/data/consult/v1.0.0/consult_mito_k32_p3l2clmn7_K15_tag2_v171.tar.gz)
-    - [Plastid CONSULT database](https://tera-trees.com/data/consult/v1.0.0/consult_plastid_k32_p3l2clmn7_K15_tag2_v171.tar.gz)
+    - [GTDB](https://ter-trees.ucsd.edu/data/consult/v1.0.0/all_nbrhood_kmers_k32_p3l2clmn7_K15-map2-171_gtdb.tar.gz)
+    - [TOL](https://ter-trees.ucsd.edu/data/consult/v1.0.0/all_nbrhood_kmers_k32_p3l2clmn7_K15-map2-171_ToL.tar.gz)
+    - [Bacterial/Archaeal Kraken](https://ter-trees.ucsd.edu/data/consult/v1.0.0/all_nbrhood_kmers_k32_p3l2clmn7_K15-map2-171_kraken.tar.gz)
+    - [Mitochondrial CONSULT database](https://ter-trees.ucsd.edu/data/consult/v1.0.0/consult_mito_k32_p3l2clmn7_K15_tag2_v171.tar.gz)
+    - [Plastid CONSULT database](https://ter-trees.ucsd.edu/data/consult/v1.0.0/consult_plastid_k32_p3l2clmn7_K15_tag2_v171.tar.gz)
     
  *  Alternatively our custom CONSULT libraries can be downloaded from drive:
     - [GTDB](https://drive.google.com/file/d/1MQJAXmZiTurumlZpvNoMLB0tKWGM_VE4/view?usp=sharing)
