@@ -15,12 +15,13 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
 using namespace std;
 
 #define THREAD_COUNT_OPT 'T'
 #define TAXONOMY_LOOKUP_PATH_OPT 'A'
 #define KMER_LENGTH 32
+
+typedef unordered_map<uint16_t, unordered_map<uint64_t, float>> nested_map;
 
 namespace TaxonomicInfo {
 uint16_t num_ranks = 7;
@@ -46,6 +47,13 @@ struct read_info {
   string readID;
   vector<kmer_match> match_vector;
 };
+
+string to_string_p(const float value, const int n = 8) {
+  std::ostringstream out;
+  out.precision(n);
+  out << fixed << value;
+  return move(out).str();
+}
 
 vector<string> list_dir(const char *path) {
   vector<string> userString;
@@ -148,10 +156,8 @@ unordered_map<uint64_t, float> get_rank_votes(kmer_match amatch,
   return match_votes;
 }
 
-void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup,
-                     vector<read_info> &all_read_info,
-                     unordered_map<uint16_t, unordered_map<uint64_t, float>> &profile_by_rank,
-                     int thread_count) {
+void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, vector<read_info> &all_read_info,
+                     nested_map &profile_by_rank, int thread_count) {
   int num_reads = all_read_info.size() / 2;
 #pragma omp parallel for schedule(dynamic, 1) num_threads(thread_count) shared(taxonomy_lookup, all_read_info)
   for (int rix = 0; rix < num_reads; ++rix) {
@@ -182,26 +188,33 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup,
         }
 
         vector<uint64_t> taxIDs_vec(all_taxIDs.begin(), all_taxIDs.end());
-
         for (uint64_t taxID : taxIDs_vec) {
-          curr_final_votes[taxID] =
-              accumulate(vote_collector[taxID].begin(), vote_collector[taxID].end(), 0.0);
+          curr_final_votes[taxID] = accumulate(vote_collector[taxID].begin(), vote_collector[taxID].end(), 0.0);
         }
         for (const auto &taxon : TaxonomicInfo::AllKingdoms) {
           curr_max_vote += curr_final_votes[static_cast<int>(taxon)];
         }
-
         if (ix % 2 == 1) {
+          nested_map cmap_by_rank;
           for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
             vector<uint64_t> taxIDs_vec_lvl(taxIDs_by_rank[lvl].begin(), taxIDs_by_rank[lvl].end());
             for (auto &taxID : taxIDs_vec_lvl) {
+              if (curr_max_vote > prev_max_vote) {
+                cmap_by_rank[lvl][taxID] += curr_final_votes[taxID];
+              } else {
+                cmap_by_rank[lvl][taxID] += prev_final_votes[taxID];
+              }
+            }
+          }
+          for (auto &rank_cmap : cmap_by_rank) {
+            float total_c = 0.0;
+            for (auto &kv : rank_cmap.second)
+              total_c += kv.second;
+            uint16_t rank = rank_cmap.first;
+            if (total_c > 0) {
+              for (auto &kv : rank_cmap.second) {
 #pragma omp critical
-              {
-                if (curr_max_vote > prev_max_vote) {
-                  profile_by_rank[lvl][taxID] += curr_final_votes[taxID];
-                } else {
-                  profile_by_rank[lvl][taxID] += prev_final_votes[taxID];
-                }
+                { profile_by_rank[rank][kv.first] += (kv.second / total_c); }
               }
             }
           }
@@ -214,15 +227,10 @@ void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup,
   }
 }
 
-void compute_profile(unordered_map<uint16_t, unordered_map<uint64_t, float>> &profile_by_rank,
-                     int thread_count) {
+void compute_profile(nested_map &profile_by_rank, int total_num_reads, int thread_count) {
   for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
-    float total_rank_nvote = 0.0;
     for (auto &kv : profile_by_rank[lvl]) {
-      total_rank_nvote += sqrt(kv.second);
-    }
-    for (auto &kv : profile_by_rank[lvl]) {
-      profile_by_rank[lvl][kv.first] = sqrt(kv.second) / total_rank_nvote;
+      profile_by_rank[lvl][kv.first] = kv.second / total_num_reads;
     }
   }
 }
@@ -236,7 +244,8 @@ void write_profile_to_file(string filepath, string taxonomy_lvl, unordered_map<u
           << "\t"
           << "FRACTION_TOTAL" << endl;
   for (auto &kv : profile) {
-    outfile << kv.first << "\t" << taxonomy_lvl << "\t" << to_string(kv.second) << endl;
+    if (kv.second > 0.0)
+      outfile << kv.first << "\t" << taxonomy_lvl << "\t" << to_string_p(kv.second, 10) << endl;
   }
 }
 
@@ -312,9 +321,9 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  int total_numberOfReads = 0;
-  int total_readTime = 0;
-  int total_profilingTime = 0;
+  int total_num_reads = 0;
+  int total_read_time = 0;
+  int total_profiling_time = 0;
 
   chrono::steady_clock::time_point t1;
   chrono::steady_clock::time_point t2;
@@ -334,22 +343,22 @@ int main(int argc, char *argv[]) {
     read_matches(input_path, all_read_info);
     t2 = chrono::steady_clock::now();
 
-    total_readTime += chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
-    total_numberOfReads += all_read_info.size();
+    total_read_time += chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+    total_num_reads += all_read_info.size() / 2;
 
-    unordered_map<uint16_t, unordered_map<uint64_t, float>> profile_by_rank;
+    nested_map profile_by_rank;
     t1 = chrono::steady_clock::now();
     aggregate_votes(taxonomy_lookup, all_read_info, profile_by_rank, thread_count);
-    compute_profile(profile_by_rank, thread_count);
+    compute_profile(profile_by_rank, total_num_reads, thread_count);
     t2 = chrono::steady_clock::now();
 
-    total_profilingTime += chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+    total_profiling_time += chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
     for (uint16_t lvl = TaxonomicInfo::num_ranks; lvl >= 1; --lvl) {
       write_profile_to_file(output_path, TaxonomicInfo::mapRankName[lvl], profile_by_rank[lvl]);
     }
   }
-  cout << "Time past (read_matches) = " << total_readTime << "[ms]" << endl;
-  cout << "Time past (aggregate_votes + compute_profile) = " << total_profilingTime << "[ms]" << endl;
-  cout << "Total number of reads processed: " << total_numberOfReads / 2 << endl;
+  cout << "Time past (read_matches) = " << total_read_time << "[ms]" << endl;
+  cout << "Time past (aggregate_votes + compute_profile) = " << total_profiling_time << "[ms]" << endl;
+  cout << "Total number of reads processed: " << total_num_reads / 2 << endl;
 }
