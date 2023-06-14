@@ -136,8 +136,8 @@ int main(int argc, char *argv[]) {
 
   // Recording end time.
   auto end = chrono::steady_clock::now();
-  cout << "-- Done writing. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl;
+  cout << "-- Done writing. Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds."
+       << endl;
 
   return 0;
 }

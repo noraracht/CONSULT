@@ -469,8 +469,7 @@ int main(int argc, char *argv[]) {
         // encoding as sigs row number.
         big_sig_hash = sig_hash & big_sig_mask;
 
-        uint64_t tmp_idx = (sigs_row_count * b * partitions * i) +
-                           (big_sig_hash * b * partitions) +
+        uint64_t tmp_idx = (sigs_row_count * b * partitions * i) + (big_sig_hash * b * partitions) +
                            sigs_indicator_arr[sigs_row_count * i + big_sig_hash];
 
         // Check is row space is available for forward k-mer.
@@ -518,9 +517,7 @@ int main(int argc, char *argv[]) {
   // Recording end time.
   auto end = chrono::steady_clock::now();
   cout << "Done hashing k-mers. Now writing the library." << endl;
-  cout << "Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count()
-       << " seconds." << endl
-       << endl;
+  cout << "Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl << endl;
 
   // Allocate new tag array.
   int8_t *new_tag_arr;
@@ -734,8 +731,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Write sigs.
-    total_sigs_written +=
-        fwrite(sigs_arr + total_sigs_written, sizeof(uint32_t), sig_chunk_counts[m], wf);
+    total_sigs_written += fwrite(sigs_arr + total_sigs_written, sizeof(uint32_t), sig_chunk_counts[m], wf);
     fclose(wf);
   }
 
@@ -755,8 +751,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Write tags.
-    total_tags_written +=
-        fwrite(new_tag_arr + total_tags_written, sizeof(int8_t), tag_chunk_counts[m], wftag);
+    total_tags_written += fwrite(new_tag_arr + total_tags_written, sizeof(int8_t), tag_chunk_counts[m], wftag);
     fclose(wftag);
   }
 
@@ -774,8 +769,8 @@ int main(int argc, char *argv[]) {
       exit(1);
     }
     // Write encoding array.
-    total_members_written_0 += fwrite(encode_arr_0 + total_members_written_0, sizeof(uint64_t),
-                                      enc_chunk_counts_0[m], wfenc);
+    total_members_written_0 +=
+        fwrite(encode_arr_0 + total_members_written_0, sizeof(uint64_t), enc_chunk_counts_0[m], wfenc);
     fclose(wfenc);
   }
 
@@ -793,8 +788,8 @@ int main(int argc, char *argv[]) {
       exit(1);
     }
     // Write encoding array.
-    total_members_written_1 += fwrite(encode_arr_1 + total_members_written_1, sizeof(uint64_t),
-                                      enc_chunk_counts_1[m], wfenc);
+    total_members_written_1 +=
+        fwrite(encode_arr_1 + total_members_written_1, sizeof(uint64_t), enc_chunk_counts_1[m], wfenc);
     fclose(wfenc);
   }
 
@@ -816,8 +811,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Write sigs.
-    total_enc_id_written +=
-        fwrite(new_enc_id_arr + total_enc_id_written, sizeof(uint8_t), enc_id_chunk_counts[m], wf);
+    total_enc_id_written += fwrite(new_enc_id_arr + total_enc_id_written, sizeof(uint8_t), enc_id_chunk_counts[m], wf);
 
     fclose(wf);
   }
@@ -835,8 +829,8 @@ int main(int argc, char *argv[]) {
   cout << "-------------------" << endl << endl;
 
   end = chrono::steady_clock::now();
-  cout << "Done constructing the library. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl
+  cout << "Done constructing the library. Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count()
+       << " seconds." << endl
        << endl;
 
   // Output map information.
@@ -848,8 +842,8 @@ int main(int argc, char *argv[]) {
   cout << "Tag size in bits = " << t << endl;
   cout << "Tag mask = " << tag_mask << endl;
   cout << "Big sig mask = " << big_sig_mask << endl;
-  cout << "Estimated size of the reference library (GB): " << std::fixed << std::setprecision(4)
-       << memory_usage_min << endl;
+  cout << "Estimated size of the reference library (GB): " << std::fixed << std::setprecision(4) << memory_usage_min
+       << endl;
   cout << "--------------------" << endl << endl;
 
   // Compute the usage of rows in signature matrix to determine how many
@@ -861,10 +855,9 @@ int main(int argc, char *argv[]) {
       sig_row_count_vec[sigs_indicator_arr[sigs_row_count * i + r]] += 1;
     }
     for (int s = 0; s < b * partitions + 1; s++) {
-      cout << "l = " << i << " -- Count of rows with positions filled " << s << " : "
-           << sig_row_count_vec[s];
-      cout << " (" << std::fixed << std::setprecision(6)
-           << (double)sig_row_count_vec[s] / sigs_row_count << ")" << endl;
+      cout << "l = " << i << " -- Count of rows with positions filled " << s << " : " << sig_row_count_vec[s];
+      cout << " (" << std::fixed << std::setprecision(6) << (double)sig_row_count_vec[s] / sigs_row_count << ")"
+           << endl;
     }
     cout << "l = " << i << " -- Total populated rows : "
          << std::accumulate(sig_row_count_vec.begin(), sig_row_count_vec.end(),
@@ -885,8 +878,8 @@ int main(int argc, char *argv[]) {
   delete[] new_tag_arr;
 
   end = chrono::steady_clock::now();
-  cout << "Done writing. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl;
+  cout << "Done writing. Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds."
+       << endl;
 
   return 0;
 }

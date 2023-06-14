@@ -144,8 +144,8 @@ unordered_map<uint64_t, float> get_rank_votes(kmer_match amatch,
   return match_votes;
 }
 
-void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup,
-                     vector<read_info> &all_read_info, int thread_count) {
+void aggregate_votes(unordered_map<uint64_t, vector<uint64_t>> taxonomy_lookup, vector<read_info> &all_read_info,
+                     int thread_count) {
 #pragma omp parallel for schedule(dynamic, 1) num_threads(thread_count) shared(taxonomy_lookup, all_read_info)
   for (int ix = 0; ix < all_read_info.size(); ++ix) {
     read_info &curr_read = all_read_info[ix];
@@ -218,9 +218,9 @@ void write_classifications_to_file(string filepath, vector<read_info> all_read_i
       read_form = "--";
       curr_read = all_read_info[2 * ix];
     }
-    outfile << curr_read.readID << "\t" << read_form << "\t" << to_string(get<0>(curr_read.pred_taxID_info))
-            << "\t" << to_string(get<1>(curr_read.pred_taxID_info)) << "\t"
-            << to_string(get<2>(curr_read.pred_taxID_info)) << endl;
+    outfile << curr_read.readID << "\t" << read_form << "\t" << to_string(get<0>(curr_read.pred_taxID_info)) << "\t"
+            << to_string(get<1>(curr_read.pred_taxID_info)) << "\t" << to_string(get<2>(curr_read.pred_taxID_info))
+            << endl;
   }
   outfile.close();
 }

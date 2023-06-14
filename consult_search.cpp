@@ -71,12 +71,11 @@ void read_filename_map(string filename, map<string, uint64_t> &filename_to_taxID
 void read_taxonomy_lookup(string filepath, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup,
                           map<uint64_t, uint16_t> &taxID_to_cID, map<uint16_t, uint64_t> &cID_to_taxID);
 
-void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_arr_0[],
-                     uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1, uint8_t encid,
-                     uint32_t encoding_ix, uint16_t filename_cID,
-                     unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup);
-void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0,
-                       vector<bool> &seen_1, uint8_t encid, uint32_t encoding_ix);
+void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_arr_0[], uint16_t count_arr_1[],
+                     vector<bool> &seen_0, vector<bool> &seen_1, uint8_t encid, uint32_t encoding_ix,
+                     uint16_t filename_cID, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup);
+void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1,
+                       uint8_t encid, uint32_t encoding_ix);
 
 map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance);
 
@@ -630,8 +629,7 @@ int main(int argc, char *argv[]) {
       }
 
       // Read encodings.
-      temp_count =
-          fread(encode_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint64_t), enc_chunk_counts_0[m], fenc);
+      temp_count = fread(encode_arr_0 + enc_chunk_cumcounts_0[m], sizeof(uint64_t), enc_chunk_counts_0[m], fenc);
 #pragma omp atomic
       num_pairs_0 += temp_count;
 
@@ -651,8 +649,7 @@ int main(int argc, char *argv[]) {
       }
 
       // Read encodings.
-      temp_count =
-          fread(encode_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint64_t), enc_chunk_counts_1[m], fence);
+      temp_count = fread(encode_arr_1 + enc_chunk_cumcounts_1[m], sizeof(uint64_t), enc_chunk_counts_1[m], fence);
 #pragma omp atomic
       num_pairs_1 += temp_count;
 
@@ -791,8 +788,8 @@ int main(int argc, char *argv[]) {
   cout << "-------------------" << endl << endl;
 
   auto end = chrono::steady_clock::now();
-  cout << "Done reading. Now matching. Time so far: "
-       << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds." << endl;
+  cout << "Done reading. Now matching. Time so far: " << chrono::duration_cast<chrono::seconds>(end - start).count()
+       << " seconds." << endl;
 
   int counter_files = 1;
 
@@ -1172,8 +1169,8 @@ int main(int argc, char *argv[]) {
         if (save_matches) {
 #pragma omp critical
           {
-            output_matches(ofs_match_information, name, match_cIDs, match_distances, rc_match_cIDs,
-                           rc_match_distances, cID_to_taxID);
+            output_matches(ofs_match_information, name, match_cIDs, match_distances, rc_match_cIDs, rc_match_distances,
+                           cID_to_taxID);
           }
         }
 
@@ -1512,10 +1509,9 @@ uint16_t getLCA(uint16_t cID_0, uint16_t cID_1, unordered_map<uint16_t, vector<u
   return cID;
 }
 
-void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_arr_0[],
-                     uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1, uint8_t encid,
-                     uint32_t encoding_ix, uint16_t filename_cID,
-                     unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup) {
+void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_arr_0[], uint16_t count_arr_1[],
+                     vector<bool> &seen_0, vector<bool> &seen_1, uint8_t encid, uint32_t encoding_ix,
+                     uint16_t filename_cID, unordered_map<uint16_t, vector<uint16_t>> &taxonomy_lookup) {
   float p_update;
   float s = 5.0;
   float w = 4.0;
@@ -1560,8 +1556,8 @@ void update_kmer_cID(uint16_t cID_arr_0[], uint16_t cID_arr_1[], uint16_t count_
   }
 }
 
-void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0,
-                       vector<bool> &seen_1, uint8_t encid, uint32_t encoding_ix) {
+void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bool> &seen_0, vector<bool> &seen_1,
+                       uint8_t encid, uint32_t encoding_ix) {
   if (encid == 0) {
 #pragma omp critical
     {
