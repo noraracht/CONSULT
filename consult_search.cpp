@@ -30,6 +30,11 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
+#define VERSION "v0.2.0"
+#define PRINT_VERSION printf("CONSULT-II version: " VERSION "\n");
+
 #define KMER_LENGTH 32
 #define TAX_ID_LIMIT 65534
 #define EXPECTED_READ_LEN 150
@@ -44,8 +49,6 @@
 #define UPDATE_ID_OPT 'U'
 #define TAXONOMY_LOOKUP_PATH_OPT 'A'
 #define FILENAME_MAP_PATH_OPT 'F'
-
-using namespace std;
 
 // Prototypes.
 vector<string> list_dir(const char *path);
@@ -80,6 +83,7 @@ void update_kmer_count(uint16_t count_arr_0[], uint16_t count_arr_1[], vector<bo
 map<uint64_t, uint64_t> init_distance_map(uint64_t maximum_distance);
 
 int main(int argc, char *argv[]) {
+  PRINT_VERSION
   auto start = chrono::steady_clock::now();
 
   string input_library_dir = string();

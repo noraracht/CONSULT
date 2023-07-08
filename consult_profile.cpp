@@ -15,11 +15,15 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-using namespace std;
+
+#define VERSION "v0.2.0"
+#define PRINT_VERSION printf("CONSULT-II version: " VERSION "\n");
 
 #define THREAD_COUNT_OPT 'T'
 #define TAXONOMY_LOOKUP_PATH_OPT 'A'
 #define KMER_LENGTH 32
+
+using namespace std;
 
 typedef unordered_map<uint16_t, unordered_map<uint64_t, double>> nested_map;
 
@@ -241,6 +245,7 @@ void write_profile_to_file(string filepath, string taxonomy_lvl, unordered_map<u
 }
 
 int main(int argc, char *argv[]) {
+  PRINT_VERSION
   uint64_t thread_count = 1;
   char *input_path = NULL;
   string taxonomy_lookup_path;

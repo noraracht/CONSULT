@@ -30,6 +30,11 @@
 #include <unistd.h>
 #include <vector>
 
+using namespace std;
+
+#define VERSION "v0.2.0"
+#define PRINT_VERSION printf("CONSULT-II version: " VERSION "\n");
+
 #define KMER_LENGTH 32
 
 #define SIGF_CHUNKS 24
@@ -37,8 +42,6 @@
 #define ENCF_CHUNKS 24
 
 #define MAX_ENC_COUNT 4000000000
-
-using namespace std;
 
 // Prototypes.
 uint64_t encode_kmer_bits(uint64_t val, vector<int8_t> shifts, vector<int8_t> bits_to_grab);
@@ -49,6 +52,7 @@ uint64_t file_read(istream &is, vector<char> &buff);
 uint64_t count_lines(const vector<char> &buff, int size);
 
 int main(int argc, char *argv[]) {
+  PRINT_VERSION
   auto start = chrono::steady_clock::now();
   srand(time(NULL));
 

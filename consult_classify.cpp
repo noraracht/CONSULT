@@ -17,6 +17,9 @@
 
 using namespace std;
 
+#define VERSION "v0.2.0"
+#define PRINT_VERSION printf("CONSULT-II version: " VERSION "\n");
+
 #define THREAD_COUNT_OPT 'T'
 #define TAXONOMY_LOOKUP_PATH_OPT 'A'
 #define KMER_LENGTH 32
@@ -226,6 +229,7 @@ void write_classifications_to_file(string filepath, vector<read_info> all_read_i
 }
 
 int main(int argc, char *argv[]) {
+  PRINT_VERSION
   uint64_t thread_count = 1;
   char *input_path = NULL;
   string taxonomy_lookup_path;
